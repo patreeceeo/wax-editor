@@ -1,11 +1,14 @@
 import './App.css'
+import VariableInput from './components/VariableInput'
 
 function App() {
 
   return (
-    <>
-      <h1>Hello!</h1>
-    </>
+    <VariableInput
+      onChange={(value) => {
+        console.log(`Variable name changed to: ${value}`);
+      }}
+    />
   )
 }
 
