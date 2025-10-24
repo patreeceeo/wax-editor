@@ -1,17 +1,18 @@
 
-// Icon components
-const ResetIcon = ({ size = "m" }: { size?: "xl" | "l" | "m" | "s" }) => {
-  const sizeClasses = {
-    xl: "w-8 h-8",
-    l: "w-6 h-6",
-    m: "w-5 h-5",
-    s: "w-4 h-4"
-  };
+const sizeClasses = {
+  xl: "w-8 h-8",
+  l: "w-6 h-6",
+  m: "w-5 h-5",
+  s: "w-4 h-4"
+} as const;
 
+const VIEW_BOX = "0 0 24 24";
+
+const ResetIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
   return (
     <svg
       className={sizeClasses[size]}
-      viewBox="0 0 24 24"
+      viewBox={VIEW_BOX}
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -28,18 +29,11 @@ const ResetIcon = ({ size = "m" }: { size?: "xl" | "l" | "m" | "s" }) => {
 
 const PlayIconPath = () => (<path d="M6 2v20l16-10z" />);
 
-const PlayIcon = ({ size = "m" }: { size?: "xl" | "l" | "m" | "s" }) => {
-  const sizeClasses = {
-    xl: "w-8 h-8",
-    l: "w-6 h-6",
-    m: "w-5 h-5",
-    s: "w-4 h-4"
-  };
-
+const PlayIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses}) => {
   return (
     <svg
       className={sizeClasses[size]}
-      viewBox="0 0 24 24"
+      viewBox={VIEW_BOX}
       fill="currentColor"
     >
       <PlayIconPath />
@@ -47,18 +41,11 @@ const PlayIcon = ({ size = "m" }: { size?: "xl" | "l" | "m" | "s" }) => {
   );
 };
 
-const BackIcon = ({ size = "m" }: { size?: "xl" | "l" | "m" | "s" }) => {
-  const sizeClasses = {
-    xl: "w-8 h-8",
-    l: "w-6 h-6",
-    m: "w-5 h-5",
-    s: "w-4 h-4"
-  };
-
+const BackIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
   return (
     <svg
       className={sizeClasses[size]}
-      viewBox="0 0 24 24"
+      viewBox={VIEW_BOX}
       fill="currentColor"
       style={{transform: 'rotate(180deg)'}}
     >
