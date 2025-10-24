@@ -5,13 +5,30 @@ import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
 
 const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: number}) => {
+  // Calculate the number of digits needed for the last line number
+  const totalDigits = program.length > 0 ? Math.floor(Math.log10(program.length)) + 1 : 1;
+
+  // Helper function to format line numbers with leading zeros
+  const formatLineNumber = (lineNumber: number) => {
+    return String(lineNumber).padStart(totalDigits, '0');
+  };
+
   return (
     <pre className="program-viewer px-0">
-      {program.map((instruction, index) => (
-        <div key={index} className={`px-3 ${index + 1 === pc ? 'bg-yellow-400 text-black font-bold' : ''}`}>
-          {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
-        </div>
-      ))}
+      {program.map((instruction, index) => {
+        const lineNumber = index + 1;
+        const formattedLineNumber = formatLineNumber(lineNumber);
+        const isCurrentLine = lineNumber === pc;
+
+        return (
+          <div key={index} className={`px-3 ${isCurrentLine ? 'bg-yellow-400 text-black font-bold' : ''}`}>
+            <span className={`text-right mr-3 ${isCurrentLine ? 'text-gray-600' : 'text-gray-500'} select-none`}>
+              {formattedLineNumber}
+            </span>
+            {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
+          </div>
+        );
+      })}
     </pre>
   )
 }
