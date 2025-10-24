@@ -3,6 +3,8 @@ import './App.css'
 import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './engine';
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
+import {BackIcon, PlayIcon, ResetIcon} from './components/Icons';
+
 
 const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, pc: number, lastPc: number}) => {
   // Calculate the number of digits needed for the last line number
@@ -26,7 +28,9 @@ const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, p
             <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
               {formattedLineNumber}
             </span>
-            {instruction.op.name} {instruction.args.map(arg => JSON.stringify(arg)).join(', ')}
+            <span>
+              {instruction.op.name} {instruction.args.map(arg => JSON.stringify(arg)).join(', ')}
+            </span>
           </div>
         );
       })}
@@ -117,11 +121,13 @@ function App() {
     <div className="p-4 space-y-4">
       <div className="space-x-4">
         <Button size="xl" onClick={clickPrev} disabled={ctxIdx === ctxs.length - 1}>
-          &lt;
+          <BackIcon size="xl" />
         </Button>
-        <Button size="xl" onClick={clickReset}>Reset</Button>
+        <Button size="xl" onClick={clickReset}>
+          <ResetIcon size="xl" />
+        </Button>
         <Button primary size="xl" onClick={clickNext} disabled={!isMore}>
-          &gt;
+          <PlayIcon size="xl" />
         </Button>
       </div>
       <div className="flex space-x-4">
