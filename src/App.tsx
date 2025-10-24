@@ -8,7 +8,7 @@ const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: numbe
     <pre className="program-viewer">
       {program.map((instruction, index) => (
         <div key={index} className={index === pc ? 'bg-red-400 text-black' : ''}>
-          {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args) : ''}
+          {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
         </div>
       ))}
     </pre>
