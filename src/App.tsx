@@ -93,19 +93,24 @@ function App() {
       </div>
       <div className="flex space-x-4">
         <div>
-          <h2>Program</h2>
+          <h2>VM Codes</h2>
           <ProgramViewer program={exampleProgram} pc={ctx.pc} />
         </div>
-        <div className="flex-1">
-          <div className="space-y-4">
-            <div>
-              <h2>Context</h2>
-              <ContextDiff
-                currentContext={ctx}
-                previousContext={previousCtx}
-              />
-            </div>
-          </div>
+        <div className="flex-1 space-y-4">
+          <h2>Variables</h2>
+          <ContextDiff
+            propertyName="variables"
+            currentContext={ctx}
+            previousContext={previousCtx}
+          />
+        </div>
+        <div className="flex-1 space-y-4">
+          <h2>Stack</h2>
+          <ContextDiff
+            propertyName="stack"
+            currentContext={ctx}
+            previousContext={previousCtx}
+          />
         </div>
       </div>
     </div>
