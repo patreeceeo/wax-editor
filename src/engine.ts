@@ -2,7 +2,7 @@ import {immerable} from "immer";
 type ScriptingObject = any;
 
 export class ScriptingContext {
-  variables: {[key: string]: ScriptingObject} = {};
+  variables: {[key: string]: ScriptingObject} = Object.create(null);
   stack: ScriptingObject[] = [];
   pc: number = 0;
   [immerable] = true;
