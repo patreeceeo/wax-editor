@@ -8,7 +8,7 @@ const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: numbe
   return (
     <pre className="program-viewer px-0">
       {program.map((instruction, index) => (
-        <div key={index} className={`px-3 ${index === pc ? 'bg-yellow-400 text-black font-bold' : ''}`}>
+        <div key={index} className={`px-3 ${index + 1 === pc ? 'bg-yellow-400 text-black font-bold' : ''}`}>
           {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
         </div>
       ))}
@@ -43,8 +43,22 @@ const Button = ({onClick, disabled, size, primary, children}: {onClick: () => vo
   )
 }
 
+function step(ctx: ScriptingContext, program: typeof exampleProgram) {
+  const instruction = nextInstruction(ctx, program);
+  if(instruction) {
+    return produce(ctx, draft => {
+      stepProgram(draft, instruction);
+    })
+  }
+}
+
 function App() {
-  const [ctxs, setCtxs] = useState([new ScriptingContext()]);
+  const zeroCtx = new ScriptingContext();
+  const firstCtx = step(zeroCtx, exampleProgram)
+  if(!firstCtx) {
+    return <div>Program finished immediately</div>;
+  }
+  const [ctxs, setCtxs] = useState([firstCtx, zeroCtx]);
   const [isMore, setMore] = useState(true);
   const [ctxIdx, setCtxIdx] = useState(0);
   const [stepCount, setStepCount] = useState(0);
