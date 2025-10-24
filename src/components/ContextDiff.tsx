@@ -37,13 +37,13 @@ export function Diff({
   }
 
   return (
-    <pre className={`context-diff ${className} px-0`}>
+    <pre className={`whitespace-pre ${className} px-0`}>
       {diffResult.map((part, index) => {
         // Remove trailing newline for better display
         const text = part.value.endsWith('\n') ? part.value.slice(0, -1) : part.value
         return <div
           key={index}
-          className={`${getLineClass(part)} font-mono whitespace-pre-wrap px-3`}
+          className={`${getLineClass(part)} px-3`}
         >
           {text}
         </div>
