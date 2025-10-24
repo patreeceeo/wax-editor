@@ -6,7 +6,6 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    require('@tailwind/typography'),
     react({
       babel: {
         plugins: [['babel-plugin-react-compiler']],
