@@ -54,13 +54,14 @@ const Button = ({onClick, disabled, size, primary, children}: {onClick: () => vo
         rounded
         ${`hover:${primary ? "text-blue-600" : "text-gray-600"}`}
         border-2
-        [box-shadow:0_var(--shadow-height-normal)_0_currentColor]
-        active:[box-shadow:0_var(--shadow-height-active)_0_currentColor]
-        active:translate-y-0.5
-        hover:[box-shadow:0_var(--shadow-height-hover)_0_currentColor]
-        hover:-translate-y-0.5
+        enabled:[box-shadow:0_var(--shadow-height-normal)_0_currentColor]
+        enabled:active:[box-shadow:0_var(--shadow-height-active)_0_currentColor]
+        enabled:active:translate-y-0.5
+        enabled:hover:[box-shadow:0_var(--shadow-height-hover)_0_currentColor]
+        enabled:hover:-translate-y-0.5
         disabled:opacity-50
         disabled:cursor-not-allowed
+        disabled:translate-y-1
         ${size === "xl" ? "text-2xl" : size === "l" ? "text-xl" : size === "m" ? "text-lg" : size === "s" ? "text-sm" : "text-base"}
         border
         ${primary ? "border-blue-200" : "border-gray-200"}
