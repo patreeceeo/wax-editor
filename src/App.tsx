@@ -58,6 +58,7 @@ function App() {
   return (
     <div className="p-4 space-y-4">
       <div className="space-x-4">
+        <h1>My lil' Virtual Machine</h1>
         <Button size="xl" onClick={clickPrev} disabled={ctxIdx === ctxs.length - 1}>
           <BackIcon size="xl" />
         </Button>
@@ -68,9 +69,10 @@ function App() {
           <PlayIcon size="xl" />
         </Button>
       </div>
+      <h3>Step Count: {stepCount}</h3>
       <div className="flex space-x-4">
         <div>
-          <h2>VM Codes</h2>
+          <h2>Instructions</h2>
           <ProgramViewer program={exampleProgram} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
         </div>
         <div className="flex-1 space-y-4">
@@ -90,7 +92,6 @@ function App() {
           />
         </div>
       </div>
-      <h3>Step Count: {stepCount}</h3>
     </div>
   )
 }
