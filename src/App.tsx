@@ -76,12 +76,7 @@ function step(ctx: ScriptingContext, program: typeof exampleProgram) {
 }
 
 function App() {
-  const zeroCtx = new ScriptingContext();
-  const firstCtx = step(zeroCtx, exampleProgram)
-  if(!firstCtx) {
-    return <div>Program finished immediately</div>;
-  }
-  const [ctxs, setCtxs] = useState([firstCtx, zeroCtx]);
+  const [ctxs, setCtxs] = useState([new ScriptingContext()]);
   const [isMore, setMore] = useState(true);
   const [ctxIdx, setCtxIdx] = useState(0);
   const [stepCount, setStepCount] = useState(0);
@@ -99,24 +94,27 @@ function App() {
   const clickReset = useCallback(() => {
     setCtxs([new ScriptingContext()]);
     setMore(true);
+    setCtxIdx(0);
+    setStepCount(0);
   }, [setCtxs, setMore]);
 
   const clickNext = useCallback(() => {
     if(ctxIdx > 0) {
       setCtxIdx(ctxIdx - 1);
     } else {
-      const instruction = nextInstruction(ctx, exampleProgram);
-      if(instruction) {
-        const newCtx = produce(ctx, draft => {
-          stepProgram(draft, instruction);
-        })
-        pushCtx(newCtx);
+      const nextCtx = step(ctx, exampleProgram);
+      if(nextCtx) {
+        pushCtx(nextCtx);
         setStepCount(stepCount + 1);
       } else {
         setMore(false);
       }
     }
   }, [ctxs, setMore, ctxIdx, setCtxIdx, ctx, pushCtx]);
+
+  if(stepCount === 0) {
+    clickNext();
+  }
 
   return (
     <div className="p-4 space-y-4">
