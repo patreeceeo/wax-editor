@@ -2,10 +2,10 @@ import {immerable} from "immer";
 type ScriptingObject = any;
 
 export class ScriptingContext {
-  [immerable] = true;
-  stack: ScriptingObject[] = [];
   variables: {[key: string]: ScriptingObject} = {};
+  stack: ScriptingObject[] = [];
   pc: number = 0;
+  [immerable] = true;
 }
 
 interface OperationFn<Args extends any[] = any[]> {
