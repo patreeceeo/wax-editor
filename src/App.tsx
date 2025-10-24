@@ -24,7 +24,7 @@ const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, p
         const isPrevious = lineNumber === lastPc;
 
         return (
-          <div key={index} className={`px-3 ${isCurrent ? 'bg-yellow-400 font-bold text-black' : isPrevious ? 'bg-red-300 text-black font-bold' :  ''}`}>
+          <div key={index} className={`px-3 ${isCurrent ? 'bg-yellow-300 font-bold text-black' : isPrevious ? 'bg-red-400 text-black font-bold' :  ''}`}>
             <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
               {formattedLineNumber}
             </span>
