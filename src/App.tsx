@@ -6,9 +6,9 @@ import ContextDiff from './components/ContextDiff';
 
 const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: number}) => {
   return (
-    <pre className="program-viewer">
+    <pre className="program-viewer px-0">
       {program.map((instruction, index) => (
-        <div key={index} className={index === pc ? 'bg-red-400 text-black' : ''}>
+        <div key={index} className={`px-3 ${index === pc ? 'bg-yellow-400 text-black font-bold' : ''}`}>
           {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
         </div>
       ))}
