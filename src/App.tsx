@@ -3,7 +3,7 @@ import './App.css'
 import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './engine';
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
-import {BackIcon, PlayIcon, ResetIcon} from './components/Icons';
+import {BackIcon, FastForwardIcon, PlayIcon, ResetIcon, RewindIcon} from './components/Icons';
 import Button from './components/Button';
 import ProgramViewer from './components/ProgramViewer';
 
@@ -32,6 +32,10 @@ function App() {
 
   const clickPrev = useCallback(() => {
     setCtxIdx(ctxIdx + 1);
+    setStepCount(stepCount - 1);
+    if(ctxIdx < ctxs.length) {
+      setMore(true);
+    }
   }, [ctxIdx, setCtxIdx, ctxs]);
 
   const clickReset = useCallback(() => {
@@ -48,25 +52,46 @@ function App() {
       const nextCtx = step(ctx, exampleProgram);
       if(nextCtx) {
         pushCtx(nextCtx);
-        setStepCount(stepCount + 1);
       } else {
         setMore(false);
       }
     }
+    setStepCount(stepCount + 1);
   }, [ctxs, setMore, ctxIdx, setCtxIdx, ctx, pushCtx]);
+
+  const clickRunToEnd = useCallback(() => {
+    let currentCtx = ctx;
+    let steps = 0;
+    while(true) {
+      const nextCtx = step(currentCtx, exampleProgram);
+      if(nextCtx) {
+        ctxs.unshift(nextCtx);
+        currentCtx = nextCtx;
+        steps += 1;
+      } else {
+        setMore(false);
+        break;
+      }
+    }
+    setStepCount(stepCount + steps);
+    setCtxs([...ctxs]);
+  }, [ctx, pushCtx, setMore, stepCount, setStepCount]);
 
   return (
     <div className="p-4 space-y-4">
       <div className="space-x-4">
         <h1>My lil' Virtual Machine</h1>
+        <Button size="xl" onClick={clickReset} disabled={ctxIdx === ctxs.length - 1}>
+          <RewindIcon size="xl" />
+        </Button>
         <Button size="xl" onClick={clickPrev} disabled={ctxIdx === ctxs.length - 1}>
           <BackIcon size="xl" />
         </Button>
-        <Button size="xl" onClick={clickReset}>
-          <ResetIcon size="xl" />
-        </Button>
         <Button primary size="xl" onClick={clickNext} disabled={!isMore}>
           <PlayIcon size="xl" />
+        </Button>
+        <Button size="xl" onClick={clickRunToEnd} disabled={!isMore}>
+          <FastForwardIcon size="xl" />
         </Button>
       </div>
       <h3>Step Count: {stepCount}</h3>

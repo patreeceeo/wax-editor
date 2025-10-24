@@ -54,4 +54,36 @@ const BackIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
   );
 };
 
-export { ResetIcon, PlayIcon, BackIcon };
+const FastForwardIconPath = () => (
+  <>
+    <path d="M5 4v16l7-8z" />
+    <path d="M14 4v16l7-8z" />
+  </>
+);
+
+const FastForwardIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
+  return (
+    <svg
+      className={sizeClasses[size]}
+      viewBox={VIEW_BOX}
+      fill="currentColor"
+    >
+      <FastForwardIconPath />
+    </svg>
+  );
+};
+
+const RewindIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
+  return (
+    <svg
+      className={sizeClasses[size]}
+      viewBox={VIEW_BOX}
+      fill="currentColor"
+      style={{transform: 'rotate(180deg)'}}
+    >
+      <FastForwardIconPath />
+    </svg>
+  );
+}
+
+export { ResetIcon, PlayIcon, BackIcon, FastForwardIcon, RewindIcon };
