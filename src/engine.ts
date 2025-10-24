@@ -23,12 +23,6 @@ function emit<Args extends any[]>(op: OperationFn<Args>, ...args: Args): Compile
 
 type CompiledProgram = CompiledOperation[];
 
-function invariant(condition: boolean, message: string) {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
-
 export function stepProgram(ctx: ScriptingContext, instruction: CompiledOperation): true | void {
   const result = instruction.op(ctx, ...instruction.args);
   ctx.pc += 1;
@@ -45,19 +39,26 @@ function pushStack(stack: ScriptingObject[], value: ScriptingObject) {
 function popStack(stack: ScriptingObject[]) {
   return stack.pop();
 }
-function pushObject(ctx: ScriptingContext, obj: ScriptingObject) {
+
+function literal(ctx: ScriptingContext, obj: ScriptingObject) {
   pushStack(ctx.stack, obj);
 }
-function pushFromIndex(ctx: ScriptingContext) {
-  const index = popStack(ctx.stack);
-  const array = popStack(ctx.stack);
-  invariant(Array.isArray(array), 'Current object is not an array');
-  pushStack(ctx.stack, array[index]);
+function getProperty(ctx: ScriptingContext) {
+  const property = popStack(ctx.stack);
+  const object = popStack(ctx.stack);
+  pushStack(ctx.stack, object[property]);
+}
+function getPropertyAtLiteral(ctx: ScriptingContext, key: string | number) {
+  const obj = popStack(ctx.stack);
+  pushStack(ctx.stack, obj[key]);
 }
 function setVariable(ctx: ScriptingContext, name: string) {
   ctx.variables[name] = popStack(ctx.stack);
 }
-function pushFromVariable(ctx: ScriptingContext, name: string) {
+function setVariableToLiteral(ctx: ScriptingContext, name: string, value: ScriptingObject) {
+  ctx.variables[name] = value;
+}
+function getVariable(ctx: ScriptingContext, name: string) {
   pushStack(ctx.stack, ctx.variables[name]);
 }
 function greaterThan(ctx: ScriptingContext) {
@@ -70,51 +71,43 @@ function jumpIfTrue(ctx: ScriptingContext, deltaPc: number) {
     ctx.pc += deltaPc;
   }
 }
-function addAndPush(ctx: ScriptingContext) {
+function add(ctx: ScriptingContext) {
   const b = popStack(ctx.stack);
   const a = popStack(ctx.stack);
   pushStack(ctx.stack, a + b);
-}
-function pushJsProperty(ctx: ScriptingContext, property: string) {
-  const obj = popStack(ctx.stack);
-  invariant(property in obj, `Property ${property} does not exist on object`);
-  pushStack(ctx.stack, obj[property]);
 }
 
 // Example: Find the max element in an array
 export const exampleProgram: CompiledProgram = [
   // array = [...]
-  emit(pushObject, [3, 1, 4, 1, 5, 9, 2, 6, 5]),
-  emit(setVariable, 'array'),
+  emit(setVariableToLiteral, 'array', [3, 1, 4, 1, 5, 9, 2, 6, 5]),
   // max = 0
-  emit(pushObject, 0),
-  emit(setVariable, 'max'),
+  emit(setVariableToLiteral, 'max', 0),
   // i = 0
-  emit(pushObject, 0),
-  emit(setVariable, 'i'),
+  emit(setVariableToLiteral, 'i', 0),
   // Loop start
   // max > array[i]
-  emit(pushFromVariable, 'max'),
-  emit(pushFromVariable, 'array'),
-  emit(pushFromVariable, 'i'),
-  emit(pushFromIndex),
+  emit(getVariable, 'max'),
+  emit(getVariable, 'array'),
+  emit(getVariable, 'i'),
+  emit(getProperty),
   emit(greaterThan),
   emit(jumpIfTrue, 4),
   // max = array[i]
-  emit(pushFromVariable, 'array'),
-  emit(pushFromVariable, 'i'),
-  emit(pushFromIndex),
+  emit(getVariable, 'array'),
+  emit(getVariable, 'i'),
+  emit(getProperty),
   emit(setVariable, 'max'),
   // i = i + 1
-  emit(pushFromVariable, 'i'),
-  emit(pushObject, 1),
-  emit(addAndPush),
+  emit(getVariable, 'i'),
+  emit(literal, 1),
+  emit(add),
   emit(setVariable, 'i'),
 
   // Loop condition: array.length > i
-  emit(pushFromVariable, 'array'),
-  emit(pushJsProperty, 'length'),
-  emit(pushFromVariable, 'i'),
+  emit(getVariable, 'array'),
+  emit(getPropertyAtLiteral, 'length'),
+  emit(getVariable, 'i'),
   emit(greaterThan),
   emit(jumpIfTrue, -19),
   // End

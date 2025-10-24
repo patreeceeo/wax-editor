@@ -26,7 +26,7 @@ const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, p
             <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
               {formattedLineNumber}
             </span>
-            {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
+            {instruction.op.name} {instruction.args.map(arg => JSON.stringify(arg)).join(', ')}
           </div>
         );
       })}
