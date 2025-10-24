@@ -2,6 +2,7 @@ import {useCallback, useState} from 'react';
 import './App.css'
 import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './engine';
 import {produce} from "immer";
+import ContextDiff from './components/ContextDiff';
 
 const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: number}) => {
   return (
@@ -48,6 +49,7 @@ function App() {
   const [isMore, setMore] = useState(true);
   const [ctxIdx, setCtxIdx] = useState(0);
   const ctx = ctxs[ctxIdx];
+  const previousCtx = ctxIdx < ctxs.length - 1 ? ctxs[ctxIdx + 1] : undefined;
 
   const pushCtx = useCallback((newCtx: ScriptingContext) => {
     setCtxs([newCtx, ...ctxs]);
@@ -94,11 +96,16 @@ function App() {
           <h2>Program</h2>
           <ProgramViewer program={exampleProgram} pc={ctx.pc} />
         </div>
-        <div>
-          <h2>Context</h2>
-          <pre>
-            {JSON.stringify(ctx, null, 2)}
-          </pre>
+        <div className="flex-1">
+          <div className="space-y-4">
+            <div>
+              <h2>Context</h2>
+              <ContextDiff
+                currentContext={ctx}
+                previousContext={previousCtx}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
