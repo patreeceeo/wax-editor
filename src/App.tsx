@@ -22,7 +22,7 @@ const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, p
         const isPrevious = lineNumber === lastPc;
 
         return (
-          <div key={index} className={`px-3 ${isPrevious ? 'bg-yellow-400 text-black font-bold' : isCurrent ? 'bg-yellow-800 font-bold' : ''}`}>
+          <div key={index} className={`px-3 ${isCurrent ? 'bg-yellow-400 font-bold text-black' : isPrevious ? 'bg-red-300 text-black font-bold' :  ''}`}>
             <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
               {formattedLineNumber}
             </span>
@@ -112,10 +112,6 @@ function App() {
       }
     }
   }, [ctxs, setMore, ctxIdx, setCtxIdx, ctx, pushCtx]);
-
-  if(stepCount === 0) {
-    clickNext();
-  }
 
   return (
     <div className="p-4 space-y-4">
