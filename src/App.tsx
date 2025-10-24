@@ -44,10 +44,10 @@ const Button = ({onClick, disabled, size, primary, children}: {onClick: () => vo
 }
 
 function App() {
-
   const [ctxs, setCtxs] = useState([new ScriptingContext()]);
   const [isMore, setMore] = useState(true);
   const [ctxIdx, setCtxIdx] = useState(0);
+  const [stepCount, setStepCount] = useState(0);
   const ctx = ctxs[ctxIdx];
   const previousCtx = ctxIdx < ctxs.length - 1 ? ctxs[ctxIdx + 1] : undefined;
 
@@ -74,6 +74,7 @@ function App() {
           stepProgram(draft, instruction);
         })
         pushCtx(newCtx);
+        setStepCount(stepCount + 1);
       } else {
         setMore(false);
       }
@@ -113,6 +114,7 @@ function App() {
           />
         </div>
       </div>
+      <h3>Step Count: {stepCount}</h3>
     </div>
   )
 }
