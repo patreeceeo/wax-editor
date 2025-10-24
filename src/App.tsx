@@ -4,7 +4,7 @@ import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
 
-const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: number}) => {
+const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, pc: number, lastPc: number}) => {
   // Calculate the number of digits needed for the last line number
   const totalDigits = program.length > 0 ? Math.floor(Math.log10(program.length)) + 1 : 1;
 
@@ -16,13 +16,14 @@ const ProgramViewer = ({program, pc}: {program: typeof exampleProgram, pc: numbe
   return (
     <pre className="program-viewer px-0">
       {program.map((instruction, index) => {
-        const lineNumber = index + 1;
-        const formattedLineNumber = formatLineNumber(lineNumber);
-        const isCurrentLine = lineNumber === pc;
+        const lineNumber = index;
+        const formattedLineNumber = formatLineNumber(lineNumber + 1);
+        const isCurrent = lineNumber === pc;
+        const isPrevious = lineNumber === lastPc;
 
         return (
-          <div key={index} className={`px-3 ${isCurrentLine ? 'bg-yellow-400 text-black font-bold' : ''}`}>
-            <span className={`text-right mr-3 ${isCurrentLine ? 'text-gray-600' : 'text-gray-500'} select-none`}>
+          <div key={index} className={`px-3 ${isPrevious ? 'bg-yellow-400 text-black font-bold' : isCurrent ? 'bg-yellow-800 font-bold' : ''}`}>
+            <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
               {formattedLineNumber}
             </span>
             {instruction.op.name} {instruction.args.length > 0 ? JSON.stringify(instruction.args[0]) : ''}
@@ -130,7 +131,7 @@ function App() {
       <div className="flex space-x-4">
         <div>
           <h2>VM Codes</h2>
-          <ProgramViewer program={exampleProgram} pc={ctx.pc} />
+          <ProgramViewer program={exampleProgram} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
         </div>
         <div className="flex-1 space-y-4">
           <h2>Variables</h2>
