@@ -76,20 +76,25 @@ function App() {
           <ProgramViewer program={exampleProgram} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
         </div>
         <div className="flex-1 space-y-4">
-          <h2>Variables</h2>
-          <ContextDiff
-            propertyName="variables"
-            currentContext={ctx}
-            previousContext={previousCtx}
-          />
-        </div>
-        <div className="flex-1 space-y-4">
-          <h2>Stack</h2>
-          <ContextDiff
-            propertyName="stack"
-            currentContext={ctx}
-            previousContext={previousCtx}
-          />
+          <h2>State</h2>
+          <div className="flex space-x-4">
+            <div>
+              <h3 className="mt-0">Variables</h3>
+              <ContextDiff
+                propertyName="variables"
+                currentContext={ctx}
+                previousContext={previousCtx}
+              />
+            </div>
+            <div>
+              <h3 className="mt-0">Stack</h3>
+              <ContextDiff
+                propertyName="stack"
+                currentContext={ctx}
+                previousContext={previousCtx}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
