@@ -39,20 +39,26 @@ const Button = ({onClick, disabled, size, primary, children}: {onClick: () => vo
     <button
       onClick={onClick}
       disabled={disabled}
+      style={{borderColor: 'currentColor'}}
       className={`
         cursor-pointer
-        ${primary ? "bg-blue-500" : "bg-gray-500"}
-        text-white
+        bg-white
+        ${primary ? "text-blue-500" : "text-gray-500"}
         font-bold
         ${size === "xl" ? "px-8 py-4" : size === "l" ? "px-6 py-3" : size === "m" ? "px-4 py-2" : size === "s" ? "px-2 py-1" : "px-4 py-2"}
         rounded
-        shadow-lg
-        ${`hover:${primary ? "bg-blue-600" : "bg-gray-600"}`}
-        active:translate-y-1
-        active:shadow-md
+        ${`hover:${primary ? "text-blue-600" : "text-gray-600"}`}
+        border-2
+        [box-shadow:0_var(--shadow-height-normal)_0_currentColor]
+        active:[box-shadow:0_var(--shadow-height-active)_0_currentColor]
+        active:translate-y-0.5
+        hover:[box-shadow:0_var(--shadow-height-hover)_0_currentColor]
+        hover:-translate-y-0.5
         disabled:opacity-50
         disabled:cursor-not-allowed
         ${size === "xl" ? "text-2xl" : size === "l" ? "text-xl" : size === "m" ? "text-lg" : size === "s" ? "text-sm" : "text-base"}
+        border
+        ${primary ? "border-blue-200" : "border-gray-200"}
       `}
     >
       {children}

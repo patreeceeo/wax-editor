@@ -1,2 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+:root {
+  --shadow-height-normal: 4px;
+  --shadow-height-active: 2px;
+  --shadow-height-hover: 6px;
+}
