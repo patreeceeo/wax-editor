@@ -4,73 +4,10 @@ import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
 import {BackIcon, PlayIcon, ResetIcon} from './components/Icons';
+import Button from './components/Button';
+import ProgramViewer from './components/ProgramViewer';
 
 
-const ProgramViewer = ({program, pc, lastPc}: {program: typeof exampleProgram, pc: number, lastPc: number}) => {
-  // Calculate the number of digits needed for the last line number
-  const totalDigits = program.length > 0 ? Math.floor(Math.log10(program.length)) + 1 : 1;
-
-  // Helper function to format line numbers with leading zeros
-  const formatLineNumber = (lineNumber: number) => {
-    return String(lineNumber).padStart(totalDigits, '0');
-  };
-
-  return (
-    <pre className="program-viewer px-0">
-      {program.map((instruction, index) => {
-        const lineNumber = index;
-        const formattedLineNumber = formatLineNumber(lineNumber + 1);
-        const isCurrent = lineNumber === pc;
-        const isPrevious = lineNumber === lastPc;
-
-        return (
-          <div key={index} className={`px-3 ${isCurrent ? 'bg-yellow-300 font-bold text-black' : isPrevious ? 'bg-red-400 text-black font-bold' :  ''}`}>
-            <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
-              {formattedLineNumber}
-            </span>
-            <span>
-              {instruction.op.name} {instruction.args.map(arg => JSON.stringify(arg)).join(', ')}
-            </span>
-          </div>
-        );
-      })}
-    </pre>
-  )
-}
-
-// Button looks 3D, press animation and hover effect
-const Button = ({onClick, disabled, size, primary, children}: {onClick: () => void, disabled?: boolean, primary?: boolean, size?: "xl" | "l" | "m" | "s", children: React.ReactNode}) => {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{borderColor: 'currentColor'}}
-      className={`
-        cursor-pointer
-        bg-white
-        ${primary ? "text-blue-500" : "text-gray-500"}
-        font-bold
-        ${size === "xl" ? "px-8 py-4" : size === "l" ? "px-6 py-3" : size === "m" ? "px-4 py-2" : size === "s" ? "px-2 py-1" : "px-4 py-2"}
-        rounded
-        ${`hover:${primary ? "text-blue-600" : "text-gray-600"}`}
-        border-2
-        enabled:[box-shadow:0_var(--shadow-height-normal)_0_currentColor]
-        enabled:active:[box-shadow:0_var(--shadow-height-active)_0_currentColor]
-        enabled:active:translate-y-0.5
-        enabled:hover:[box-shadow:0_var(--shadow-height-hover)_0_currentColor]
-        enabled:hover:-translate-y-0.5
-        disabled:opacity-50
-        disabled:cursor-not-allowed
-        disabled:translate-y-1
-        ${size === "xl" ? "text-2xl" : size === "l" ? "text-xl" : size === "m" ? "text-lg" : size === "s" ? "text-sm" : "text-base"}
-        border
-        ${primary ? "border-blue-200" : "border-gray-200"}
-      `}
-    >
-      {children}
-    </button>
-  )
-}
 
 function step(ctx: ScriptingContext, program: typeof exampleProgram) {
   const instruction = nextInstruction(ctx, program);

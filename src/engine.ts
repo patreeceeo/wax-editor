@@ -21,7 +21,7 @@ function emit<Args extends any[]>(op: OperationFn<Args>, ...args: Args): Compile
   return {op, args};
 }
 
-type CompiledProgram = CompiledOperation[];
+export type CompiledProgram = CompiledOperation[];
 
 export function stepProgram(ctx: ScriptingContext, instruction: CompiledOperation): true | void {
   const result = instruction.op(ctx, ...instruction.args);
