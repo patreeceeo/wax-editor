@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import './App.css'
 import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './engine';
 import {produce} from "immer";
@@ -44,29 +44,50 @@ const Button = ({onClick, disabled, size, primary, children}: {onClick: () => vo
 
 function App() {
 
-  const [ctx, setCtx] = useState(new ScriptingContext());
-  const [enabled, setEnabled] = useState(true);
+  const [ctxs, setCtxs] = useState([new ScriptingContext()]);
+  const [isMore, setMore] = useState(true);
+  const [ctxIdx, setCtxIdx] = useState(0);
+  const ctx = ctxs[ctxIdx];
+
+  const pushCtx = useCallback((newCtx: ScriptingContext) => {
+    setCtxs([newCtx, ...ctxs]);
+  }, [setCtxs, ctxs]);
+
+  const clickPrev = useCallback(() => {
+    setCtxIdx(ctxIdx + 1);
+  }, [ctxIdx, setCtxIdx, ctxs]);
+
+  const clickReset = useCallback(() => {
+    setCtxs([new ScriptingContext()]);
+    setMore(true);
+  }, [setCtxs, setMore]);
+
+  const clickNext = useCallback(() => {
+    if(ctxIdx > 0) {
+      setCtxIdx(ctxIdx - 1);
+    } else {
+      const instruction = nextInstruction(ctx, exampleProgram);
+      if(instruction) {
+        const newCtx = produce(ctx, draft => {
+          stepProgram(draft, instruction);
+        })
+        pushCtx(newCtx);
+      } else {
+        setMore(false);
+      }
+    }
+  }, [ctxs, setMore, ctxIdx, setCtxIdx, ctx, pushCtx]);
 
   return (
     <div className="p-4 space-y-4">
       <div className="space-x-4">
-        <Button primary size="xl" onClick={() => {
-          const instruction = nextInstruction(ctx, exampleProgram);
-          if(instruction) {
-            const newCtx = produce(ctx, draft => {
-              stepProgram(draft, instruction);
-            })
-            setCtx(newCtx);
-          } else {
-            setEnabled(false);
-          }
-        }} disabled={!enabled}>
-          Step
+        <Button size="xl" onClick={clickPrev} disabled={ctxIdx === ctxs.length - 1}>
+          &lt;
         </Button>
-        <Button size="xl" onClick={() => {
-          setCtx(new ScriptingContext());
-          setEnabled(true);
-        }}>Reset</Button>
+        <Button size="xl" onClick={clickReset}>Reset</Button>
+        <Button primary size="xl" onClick={clickNext} disabled={!isMore}>
+          &gt;
+        </Button>
       </div>
       <div className="flex space-x-4">
         <div>
