@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { diffLines } from 'diff'
-import { ScriptingContext } from '../engine'
+import { ScriptingContext } from '../machine'
 
 interface ContextDiffProps {
   currentContext: ScriptingContext

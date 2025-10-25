@@ -1,4 +1,4 @@
-import { type CompiledProgram } from '../engine';
+import { type CompiledProgram } from '../machine';
 
 interface ProgramViewerProps {
   program: CompiledProgram;

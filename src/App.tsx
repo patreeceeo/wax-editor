@@ -1,6 +1,6 @@
 import {useCallback, useState} from 'react';
 import './App.css'
-import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './engine';
+import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './machine';
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, ResetIcon, RewindIcon} from './components/Icons';
