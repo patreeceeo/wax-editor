@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { diffLines } from 'diff'
-import { ScriptingContext } from '../machine'
+import { ProcedureContext } from '../machine'
 
 interface ContextDiffProps {
-  currentContext: ScriptingContext
-  previousContext?: ScriptingContext
-  propertyName: keyof ScriptingContext
+  currentContext: ProcedureContext
+  previousContext?: ProcedureContext
+  propertyName: keyof ProcedureContext
   className?: string
 }
 

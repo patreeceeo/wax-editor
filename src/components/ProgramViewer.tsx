@@ -1,7 +1,7 @@
-import { type CompiledProgram } from '../machine';
+import { type CompiledProcedure } from '../machine';
 
 interface ProgramViewerProps {
-  program: CompiledProgram;
+  program: CompiledProcedure;
   pc: number;
   lastPc: number;
 }
@@ -33,7 +33,7 @@ export default function ProgramViewer({
               {formattedLineNumber}
             </span>
             <span>
-              {instruction.op.name} {instruction.args.map(arg => JSON.stringify(arg)).join(', ')}
+              {instruction.fn.name} {instruction.args.map(arg => JSON.stringify(arg)).join(', ')}
             </span>
           </div>
         );

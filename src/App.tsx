@@ -1,15 +1,16 @@
 import {useCallback, useState} from 'react';
 import './App.css'
-import {exampleProgram, nextInstruction, ScriptingContext, stepProgram} from './machine';
+import {findMaxProc, Machine, nextInstruction, ProcedureContext, stepProgram} from './machine';
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, ResetIcon, RewindIcon} from './components/Icons';
 import Button from './components/Button';
 import ProgramViewer from './components/ProgramViewer';
 
+const machine = new Machine();
+machine.loadProcedure("findMax", findMaxProc);
 
-
-function step(ctx: ScriptingContext, program: typeof exampleProgram) {
+function step(ctx: ProcedureContext, program: typeof findMaxProc) {
   const instruction = nextInstruction(ctx, program);
   if(instruction) {
     return produce(ctx, draft => {
@@ -19,14 +20,14 @@ function step(ctx: ScriptingContext, program: typeof exampleProgram) {
 }
 
 function App() {
-  const [ctxs, setCtxs] = useState([new ScriptingContext()]);
+  const [ctxs, setCtxs] = useState([new ProcedureContext()]);
   const [isMore, setMore] = useState(true);
   const [ctxIdx, setCtxIdx] = useState(0);
   const [stepCount, setStepCount] = useState(0);
   const ctx = ctxs[ctxIdx];
   const previousCtx = ctxIdx < ctxs.length - 1 ? ctxs[ctxIdx + 1] : undefined;
 
-  const pushCtx = useCallback((newCtx: ScriptingContext) => {
+  const pushCtx = useCallback((newCtx: ProcedureContext) => {
     setCtxs([newCtx, ...ctxs]);
   }, [setCtxs, ctxs]);
 
@@ -39,7 +40,7 @@ function App() {
   }, [ctxIdx, setCtxIdx, ctxs]);
 
   const clickReset = useCallback(() => {
-    setCtxs([new ScriptingContext()]);
+    setCtxs([new ProcedureContext()]);
     setMore(true);
     setCtxIdx(0);
     setStepCount(0);
@@ -49,7 +50,7 @@ function App() {
     if(ctxIdx > 0) {
       setCtxIdx(ctxIdx - 1);
     } else {
-      const nextCtx = step(ctx, exampleProgram);
+      const nextCtx = step(ctx, findMaxProc);
       if(nextCtx) {
         pushCtx(nextCtx);
       } else {
@@ -63,7 +64,7 @@ function App() {
     let currentCtx = ctx;
     let steps = 0;
     while(true) {
-      const nextCtx = step(currentCtx, exampleProgram);
+      const nextCtx = step(currentCtx, findMaxProc);
       if(nextCtx) {
         ctxs.unshift(nextCtx);
         currentCtx = nextCtx;
@@ -98,7 +99,7 @@ function App() {
       <div className="flex space-x-4">
         <div>
           <h2>Instructions</h2>
-          <ProgramViewer program={exampleProgram} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
+          <ProgramViewer program={findMaxProc} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
         </div>
         <div className="flex-1 space-y-4">
           <h2>State</h2>
