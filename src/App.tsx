@@ -1,9 +1,9 @@
 import {useCallback, useState} from 'react';
 import './App.css'
-import {findMaxProc, Machine, nextInstruction, ProcedureContext, stepProgram} from './machine';
+import {findMaxProc, Machine } from './machine';
 import {produce} from "immer";
 import ContextDiff from './components/ContextDiff';
-import {BackIcon, FastForwardIcon, PlayIcon, ResetIcon, RewindIcon} from './components/Icons';
+import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './components/Icons';
 import Button from './components/Button';
 import ProgramViewer from './components/ProgramViewer';
 
