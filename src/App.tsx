@@ -7,67 +7,74 @@ import {BackIcon, FastForwardIcon, PlayIcon, ResetIcon, RewindIcon} from './comp
 import Button from './components/Button';
 import ProgramViewer from './components/ProgramViewer';
 
-const machine = new Machine();
-machine.loadProcedure("findMax", findMaxProc);
+function createInitialMachine(): Machine {
+  const machine = new Machine();
+  machine.loadProcedure("findMax", findMaxProc);
+  machine.invokeProcedure("findMax");
+  return machine;
+}
 
-function step(ctx: ProcedureContext, program: typeof findMaxProc) {
-  const instruction = nextInstruction(ctx, program);
+function stepMachine(currentMachine: Machine): Machine | null {
+  const instruction = currentMachine.nextInstruction();
   if(instruction) {
-    return produce(ctx, draft => {
-      stepProgram(draft, instruction);
-    })
+    return produce(currentMachine, draft => {
+      draft.stepProgram(instruction);
+    });
   }
+  return null;
 }
 
 function App() {
-  const [ctxs, setCtxs] = useState([new ProcedureContext()]);
+  const [machines, setMachines] = useState([createInitialMachine()]);
   const [isMore, setMore] = useState(true);
-  const [ctxIdx, setCtxIdx] = useState(0);
+  const [machineIndex, setMachineIndex] = useState(0);
   const [stepCount, setStepCount] = useState(0);
-  const ctx = ctxs[ctxIdx];
-  const previousCtx = ctxIdx < ctxs.length - 1 ? ctxs[ctxIdx + 1] : undefined;
+  const ctx = machines[machineIndex].currentProcedureContext();
+  const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext() : undefined;
 
-  const pushCtx = useCallback((newCtx: ProcedureContext) => {
-    setCtxs([newCtx, ...ctxs]);
-  }, [setCtxs, ctxs]);
+  const pushMachine = useCallback((newMachine: Machine) => {
+    setMachines([newMachine, ...machines]);
+  }, [setMachines, machines]);
 
   const clickPrev = useCallback(() => {
-    setCtxIdx(ctxIdx + 1);
+    setMachineIndex(machineIndex + 1);
     setStepCount(stepCount - 1);
-    if(ctxIdx < ctxs.length) {
+    if(machineIndex < machines.length) {
       setMore(true);
     }
-  }, [ctxIdx, setCtxIdx, ctxs]);
+  }, [machineIndex, setMachineIndex, machines, stepCount, setStepCount, setMore]);
 
   const clickReset = useCallback(() => {
-    setCtxs([new ProcedureContext()]);
+    setMachines([createInitialMachine()]);
     setMore(true);
-    setCtxIdx(0);
+    setMachineIndex(0);
     setStepCount(0);
-  }, [setCtxs, setMore]);
+  }, [setMachines, setMore, setMachineIndex, setStepCount]);
 
   const clickNext = useCallback(() => {
-    if(ctxIdx > 0) {
-      setCtxIdx(ctxIdx - 1);
+    if(machineIndex > 0) {
+      setMachineIndex(machineIndex - 1);
     } else {
-      const nextCtx = step(ctx, findMaxProc);
-      if(nextCtx) {
-        pushCtx(nextCtx);
+      const currentMachine = machines[0];
+      const nextMachine = stepMachine(currentMachine);
+      if(nextMachine) {
+        pushMachine(nextMachine);
       } else {
         setMore(false);
       }
     }
     setStepCount(stepCount + 1);
-  }, [ctxs, setMore, ctxIdx, setCtxIdx, ctx, pushCtx]);
+  }, [machines, setMore, machineIndex, setMachineIndex, pushMachine, stepCount, setStepCount]);
 
   const clickRunToEnd = useCallback(() => {
-    let currentCtx = ctx;
+    let currentMachine = machines[0];
+    let newMachines = [];
     let steps = 0;
     while(true) {
-      const nextCtx = step(currentCtx, findMaxProc);
-      if(nextCtx) {
-        ctxs.unshift(nextCtx);
-        currentCtx = nextCtx;
+      const nextMachine = stepMachine(currentMachine);
+      if(nextMachine) {
+        newMachines.unshift(nextMachine);
+        currentMachine = nextMachine;
         steps += 1;
       } else {
         setMore(false);
@@ -75,17 +82,17 @@ function App() {
       }
     }
     setStepCount(stepCount + steps);
-    setCtxs([...ctxs]);
-  }, [ctx, pushCtx, setMore, stepCount, setStepCount]);
+    setMachines([...newMachines, ...machines]);
+  }, [machines, setMore, stepCount, setStepCount]);
 
   return (
     <div className="p-4 space-y-4">
       <div className="space-x-4">
         <h1>My lil' Virtual Machine</h1>
-        <Button size="xl" onClick={clickReset} disabled={ctxIdx === ctxs.length - 1}>
+        <Button size="xl" onClick={clickReset} disabled={machineIndex === machines.length - 1}>
           <RewindIcon size="xl" />
         </Button>
-        <Button size="xl" onClick={clickPrev} disabled={ctxIdx === ctxs.length - 1}>
+        <Button size="xl" onClick={clickPrev} disabled={machineIndex === machines.length - 1}>
           <BackIcon size="xl" />
         </Button>
         <Button primary size="xl" onClick={clickNext} disabled={!isMore}>

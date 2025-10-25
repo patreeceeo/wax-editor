@@ -38,6 +38,7 @@ export class Machine {
   private _stack: ProcedureContext[] = [];
   private _procedureMap: {[key: string]: CompiledProcedure} = {};
   private _currentProcedureKey: string | null = null;
+  [immerable] = true;
 
   loadProcedure(key: string, proc: CompiledProcedure) {
     this._procedureMap[key] = proc;
