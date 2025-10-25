@@ -69,31 +69,36 @@ function clickNextHelper(
 ) {
   if(machineIndex > 0) {
     setMachineIndex(machineIndex - 1);
+    setStepCount(prev => prev + 1);
   } else {
     const currentMachine = machines[0];
     const nextMachine = stepMachine(currentMachine);
     if(nextMachine) {
       pushMachine(nextMachine);
+      setStepCount(prev => prev + 1);
     } else {
       setMore(false);
     }
   }
-  setStepCount(prev => prev + 1);
 }
 
 function clickRunToEndHelper(
+  machineIndex: number,
   machines: Machine[],
+  setMachineIndex: Dispatch<SetStateAction<number>>,
   setMachines: Dispatch<SetStateAction<Machine[]>>,
   setMore: Dispatch<SetStateAction<boolean>>,
   setStepCount: Dispatch<SetStateAction<number>>
 ) {
-  let currentMachine = machines[0];
+  const startMachine = machines[machineIndex];
   let newMachines = [];
+  let currentMachine = startMachine;
   let steps = 0;
+
   while(true) {
     const nextMachine = stepMachine(currentMachine);
     if(nextMachine) {
-      newMachines.unshift(nextMachine);
+      newMachines.push(nextMachine);
       currentMachine = nextMachine;
       steps += 1;
     } else {
@@ -101,8 +106,19 @@ function clickRunToEndHelper(
       break;
     }
   }
+
   setStepCount(prev => prev + steps);
-  setMachines([...newMachines, ...machines]);
+
+  if (machineIndex === 0) {
+    // Prepend to existing machines when starting from newest
+    setMachines([...newMachines.reverse(), ...machines]);
+  } else {
+    // Replace from current position forward when starting from history
+    const beforeCurrent = machines.slice(machineIndex + 1);
+    setMachines([...newMachines.reverse(), ...beforeCurrent]);
+  }
+
+  setMachineIndex(0); // Always show final result
 }
 
 function App() {
@@ -121,7 +137,7 @@ function App() {
 
   const clickNext = useCallback(() => clickNextHelper(machineIndex, machines, pushMachine, setMachineIndex, setMore, setStepCount), [machineIndex, machines, pushMachine, setMachineIndex, setMore, setStepCount]);
 
-  const clickRunToEnd = useCallback(() => clickRunToEndHelper(machines, setMachines, setMore, setStepCount), [machines, setMore, stepCount, setStepCount]);
+  const clickRunToEnd = useCallback(() => clickRunToEndHelper(machineIndex, machines, setMachineIndex, setMachines, setMore, setStepCount), [machineIndex, machines, setMachineIndex, setMachines, setMore, setStepCount]);
 
   return (
     <div className="p-4 space-y-4">
