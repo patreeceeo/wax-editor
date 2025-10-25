@@ -26,8 +26,8 @@ function stepMachine(currentMachine: Machine): Machine | null {
 
 // Helper functions for hooks
 function pushMachineHelper(
-  newMachine: Machine,
   machines: Machine[],
+  newMachine: Machine,
   setMachines: Dispatch<SetStateAction<Machine[]>>
 ) {
   setMachines([newMachine, ...machines]);
@@ -37,8 +37,8 @@ function clickPrevHelper(
   machineIndex: number,
   machines: Machine[],
   setMachineIndex: Dispatch<SetStateAction<number>>,
-  setStepCount: Dispatch<SetStateAction<number>>,
-  setMore: Dispatch<SetStateAction<boolean>>
+  setMore: Dispatch<SetStateAction<boolean>>,
+  setStepCount: Dispatch<SetStateAction<number>>
 ) {
   setMachineIndex(machineIndex + 1);
   setStepCount(prev => prev - 1);
@@ -48,9 +48,9 @@ function clickPrevHelper(
 }
 
 function clickResetHelper(
+  setMachineIndex: Dispatch<SetStateAction<number>>,
   setMachines: Dispatch<SetStateAction<Machine[]>>,
   setMore: Dispatch<SetStateAction<boolean>>,
-  setMachineIndex: Dispatch<SetStateAction<number>>,
   setStepCount: Dispatch<SetStateAction<number>>
 ) {
   setMachines([createInitialMachine()]);
@@ -62,10 +62,10 @@ function clickResetHelper(
 function clickNextHelper(
   machineIndex: number,
   machines: Machine[],
+  pushMachine: (newMachine: Machine) => void,
   setMachineIndex: Dispatch<SetStateAction<number>>,
   setMore: Dispatch<SetStateAction<boolean>>,
-  setStepCount: Dispatch<SetStateAction<number>>,
-  pushMachine: (newMachine: Machine) => void
+  setStepCount: Dispatch<SetStateAction<number>>
 ) {
   if(machineIndex > 0) {
     setMachineIndex(machineIndex - 1);
@@ -113,13 +113,13 @@ function App() {
   const ctx = machines[machineIndex].currentProcedureContext();
   const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext() : undefined;
 
-  const pushMachine = useCallback((newMachine: Machine) => pushMachineHelper(newMachine, machines, setMachines), [setMachines, machines]);
+  const pushMachine = useCallback((newMachine: Machine) => pushMachineHelper(machines, newMachine, setMachines), [machines, setMachines]);
 
-  const clickPrev = useCallback(() => clickPrevHelper(machineIndex, machines, setMachineIndex, setStepCount, setMore), [machineIndex, setMachineIndex, machines, setStepCount, setMore]);
+  const clickPrev = useCallback(() => clickPrevHelper(machineIndex, machines, setMachineIndex, setMore, setStepCount), [machineIndex, machines, setMachineIndex, setMore, setStepCount]);
 
-  const clickReset = useCallback(() => clickResetHelper(setMachines, setMore, setMachineIndex, setStepCount), [setMachines, setMore, setMachineIndex, setStepCount]);
+  const clickReset = useCallback(() => clickResetHelper(setMachineIndex, setMachines, setMore, setStepCount), [setMachineIndex, setMachines, setMore, setStepCount]);
 
-  const clickNext = useCallback(() => clickNextHelper(machineIndex, machines, setMachineIndex, setMore, setStepCount, pushMachine), [machines, setMore, machineIndex, setMachineIndex, pushMachine, stepCount, setStepCount]);
+  const clickNext = useCallback(() => clickNextHelper(machineIndex, machines, pushMachine, setMachineIndex, setMore, setStepCount), [machineIndex, machines, pushMachine, setMachineIndex, setMore, setStepCount]);
 
   const clickRunToEnd = useCallback(() => clickRunToEndHelper(machines, setMachines, setMore, setStepCount), [machines, setMore, stepCount, setStepCount]);
 
