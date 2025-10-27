@@ -91,34 +91,31 @@ function clickRunToEndHelper(
   setStepCount: Dispatch<SetStateAction<number>>
 ) {
   const startMachine = machines[machineIndex];
-  let newMachines = [];
+  let steppedMachines = [];
   let currentMachine = startMachine;
-  let steps = 0;
 
+  // Step forward to completion
   while(true) {
     const nextMachine = stepMachine(currentMachine);
     if(nextMachine) {
-      newMachines.push(nextMachine);
+      steppedMachines.push(nextMachine);
       currentMachine = nextMachine;
-      steps += 1;
     } else {
       setMore(false);
       break;
     }
   }
 
-  setStepCount(prev => prev + steps);
+  // Build complete timeline: machines before start + stepped machines
+  const beforeStart = machines.slice(machineIndex + 1);
+  const completeTimeline = [currentMachine, ...steppedMachines.reverse(), ...beforeStart];
 
-  if (machineIndex === 0) {
-    // Prepend to existing machines when starting from newest
-    setMachines([...newMachines.reverse(), ...machines]);
-  } else {
-    // Replace from current position forward when starting from history
-    const beforeCurrent = machines.slice(machineIndex + 1);
-    setMachines([...newMachines.reverse(), ...beforeCurrent]);
-  }
+  // Calculate step count based on position in complete timeline
+  const finalStepCount = machineIndex + steppedMachines.length;
 
-  setMachineIndex(0); // Always show final result
+  setMachines(completeTimeline);
+  setStepCount(finalStepCount);
+  setMachineIndex(0);
 }
 
 function App() {
