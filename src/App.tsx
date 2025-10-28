@@ -15,10 +15,10 @@ function createInitialMachine(): Machine {
 }
 
 function stepMachine(currentMachine: Machine): Machine | null {
-  const instruction = currentMachine.nextInstruction();
+  const instruction = currentMachine.getInstruction();
   if(instruction) {
     return produce(currentMachine, draft => {
-      draft.stepProgram(instruction);
+      draft.applyInstruction(instruction);
     });
   }
   return null;

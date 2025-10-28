@@ -55,7 +55,7 @@ export class Machine {
     return this._stack[0];
   }
 
-  nextInstruction() {
+  getInstruction() {
     const ctx = this.currentProcedureContext();
     if (this._currentProcedureKey) {
       const proc = this._memory.get(this._currentProcedureKey);
@@ -64,7 +64,7 @@ export class Machine {
     return null;
   }
 
-  stepProgram(instruction: CompiledInstruction): true | void {
+  applyInstruction(instruction: CompiledInstruction): true | void {
     const ctx = this.currentProcedureContext();
     const result = instruction.fn(ctx, ...instruction.args);
     ctx.pc += 1;
