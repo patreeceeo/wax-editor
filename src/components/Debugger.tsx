@@ -113,7 +113,7 @@ export function _reducer(state: DebuggerState, action: DebuggerAction): Debugger
       const completeTimeline = [currentMachine, ...steppedMachines.reverse(), ...beforeStart];
 
       // Calculate step count based on position in complete timeline
-      const finalStepCount = state.machineIndex + steppedMachines.length;
+      const finalStepCount = state.stepCount + steppedMachines.length;
 
       return {
         machines: completeTimeline,

@@ -13,46 +13,86 @@ machine.load("main", program);
 machine.start();
 
 describe("Debugger actions", () => {
+  let _state: ReturnType<typeof _getInitialState>;
   describe("when at first step", () => {
-    let _state: ReturnType<typeof _getInitialState>;
     beforeEach(() => {
       _state = _getInitialState(machine);
     });
 
-    test("should not go back", () => {
-      const next = _reducer(_state, { type: "PREV" });
-      expect(next).toEqual(_state);
-    });
-
     test("step forward", () => {
+      const next = _reducer(_state, { type: "NEXT" });
+      expect(next.machines).toHaveLength(2);
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(1);
+      expect(next.isMore).toBe(true);
     });
 
     test("run to end", () => {
+      const next = _reducer(_state, { type: "RUN_TO_END" });
+      expect(next.machines).toHaveLength(4);
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(3);
+      expect(next.isMore).toBe(false);
     });
   });
 
   describe("when in middle", () => {
+    beforeEach(() => {
+      _state = _getInitialState(machine);
+      // Step forward to middle state
+      _state = _reducer(_state, { type: "NEXT"  });
+    });
     test("step back", () => {
+      const next = _reducer(_state, { type: "PREV" });
+      expect(next.machineIndex).toBe(1);
+      expect(next.stepCount).toBe(0);
+      expect(next.isMore).toBe(true);
     });
 
     test("step forward", () => {
+      const next = _reducer(_state, { type: "NEXT" });
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(2);
+      expect(next.isMore).toBe(true);
     });
 
     test("run to end", () => {
+      const next = _reducer(_state, { type: "RUN_TO_END" });
+      expect(next.machines).toHaveLength(4);
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(3);
+      expect(next.isMore).toBe(false);
     });
 
     test("reset to first step", () => {
+      const next = _reducer(_state, { type: "RESET", machine: machine });
+      expect(next.machines).toHaveLength(1);
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(0);
+      expect(next.isMore).toBe(true);
     });
   });
 
   describe("when at end", () => {
+    beforeEach(() => {
+      _state = _getInitialState(machine);
+      // Run to end state
+      _state = _reducer(_state, { type: "RUN_TO_END"  });
+    });
+
     test("step back", () => {
+      const next = _reducer(_state, { type: "PREV" });
+      expect(next.machineIndex).toBe(1);
+      expect(next.stepCount).toBe(2);
+      expect(next.isMore).toBe(true);
     });
 
-    test("should not step forward", () => {
-    });
-
-    test("run to end", () => {
+    test("reset to first step", () => {
+      const next = _reducer(_state, { type: "RESET", machine: machine });
+      expect(next.machines).toHaveLength(1);
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(0);
+      expect(next.isMore).toBe(true);
     });
   });
 });
