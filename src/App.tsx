@@ -1,4 +1,4 @@
-import {useCallback, useState, type Dispatch, type SetStateAction} from 'react';
+import {useCallback, useReducer} from 'react';
 import './App.css'
 import {findMaxProc, Machine } from './machine';
 import {produce} from "immer";
@@ -24,117 +24,133 @@ function stepMachine(currentMachine: Machine): Machine | null {
   return null;
 }
 
-// Helper functions for hooks
-function pushMachineHelper(
-  machines: Machine[],
-  newMachine: Machine,
-  setMachines: Dispatch<SetStateAction<Machine[]>>
-) {
-  setMachines([newMachine, ...machines]);
+
+
+
+
+
+// State management interfaces and types
+interface AppState {
+  machines: Machine[];
+  isMore: boolean;
+  machineIndex: number;
+  stepCount: number;
 }
 
-function clickPrevHelper(
-  machineIndex: number,
-  machines: Machine[],
-  setMachineIndex: Dispatch<SetStateAction<number>>,
-  setMore: Dispatch<SetStateAction<boolean>>,
-  setStepCount: Dispatch<SetStateAction<number>>
-) {
-  setMachineIndex(machineIndex + 1);
-  setStepCount(prev => prev - 1);
-  if(machineIndex < machines.length) {
-    setMore(true);
-  }
-}
+type AppAction =
+  | { type: 'RESET' }
+  | { type: 'PREV' }
+  | { type: 'NEXT' }
+  | { type: 'RUN_TO_END' };
 
-function clickResetHelper(
-  setMachineIndex: Dispatch<SetStateAction<number>>,
-  setMachines: Dispatch<SetStateAction<Machine[]>>,
-  setMore: Dispatch<SetStateAction<boolean>>,
-  setStepCount: Dispatch<SetStateAction<number>>
-) {
-  setMachines([createInitialMachine()]);
-  setMore(true);
-  setMachineIndex(0);
-  setStepCount(0);
-}
-
-function clickNextHelper(
-  machineIndex: number,
-  machines: Machine[],
-  pushMachine: (newMachine: Machine) => void,
-  setMachineIndex: Dispatch<SetStateAction<number>>,
-  setMore: Dispatch<SetStateAction<boolean>>,
-  setStepCount: Dispatch<SetStateAction<number>>
-) {
-  if(machineIndex > 0) {
-    setMachineIndex(machineIndex - 1);
-    setStepCount(prev => prev + 1);
-  } else {
-    const currentMachine = machines[0];
-    const nextMachine = stepMachine(currentMachine);
-    if(nextMachine) {
-      pushMachine(nextMachine);
-      setStepCount(prev => prev + 1);
-    } else {
-      setMore(false);
+// Reducer function
+function appReducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case 'RESET': {
+      return {
+        machines: [createInitialMachine()],
+        isMore: true,
+        machineIndex: 0,
+        stepCount: 0
+      };
     }
-  }
-}
 
-function clickRunToEndHelper(
-  machineIndex: number,
-  machines: Machine[],
-  setMachineIndex: Dispatch<SetStateAction<number>>,
-  setMachines: Dispatch<SetStateAction<Machine[]>>,
-  setMore: Dispatch<SetStateAction<boolean>>,
-  setStepCount: Dispatch<SetStateAction<number>>
-) {
-  const startMachine = machines[machineIndex];
-  let steppedMachines = [];
-  let currentMachine = startMachine;
-
-  // Step forward to completion
-  while(true) {
-    const nextMachine = stepMachine(currentMachine);
-    if(nextMachine) {
-      steppedMachines.push(nextMachine);
-      currentMachine = nextMachine;
-    } else {
-      setMore(false);
-      break;
+    case 'PREV': {
+      if (state.machineIndex < state.machines.length - 1) {
+        return {
+          ...state,
+          machineIndex: state.machineIndex + 1,
+          stepCount: state.stepCount - 1,
+          isMore: true
+        };
+      }
+      return state;
     }
+
+    case 'NEXT': {
+      if (state.machineIndex > 0) {
+        // Navigate forward in history
+        return {
+          ...state,
+          machineIndex: state.machineIndex - 1,
+          stepCount: state.stepCount + 1
+        };
+      } else {
+        // Step current machine forward
+        const currentMachine = state.machines[0];
+        const nextMachine = stepMachine(currentMachine);
+        if (nextMachine) {
+          return {
+            machines: [nextMachine, ...state.machines],
+            isMore: true,
+            machineIndex: 0,
+            stepCount: state.stepCount + 1
+          };
+        } else {
+          return {
+            ...state,
+            isMore: false
+          };
+        }
+      }
+    }
+
+    case 'RUN_TO_END': {
+      const startMachine = state.machines[state.machineIndex];
+      let steppedMachines = [];
+      let currentMachine = startMachine;
+
+      // Step forward to completion
+      while (true) {
+        const nextMachine = stepMachine(currentMachine);
+        if (nextMachine) {
+          steppedMachines.push(nextMachine);
+          currentMachine = nextMachine;
+        } else {
+          break;
+        }
+      }
+
+      // Build complete timeline: machines before start + stepped machines
+      const beforeStart = state.machines.slice(state.machineIndex + 1);
+      const completeTimeline = [currentMachine, ...steppedMachines.reverse(), ...beforeStart];
+
+      // Calculate step count based on position in complete timeline
+      const finalStepCount = state.machineIndex + steppedMachines.length;
+
+      return {
+        machines: completeTimeline,
+        isMore: false,
+        machineIndex: 0,
+        stepCount: finalStepCount
+      };
+    }
+
+    default:
+      return state;
   }
-
-  // Build complete timeline: machines before start + stepped machines
-  const beforeStart = machines.slice(machineIndex + 1);
-  const completeTimeline = [currentMachine, ...steppedMachines.reverse(), ...beforeStart];
-
-  // Calculate step count based on position in complete timeline
-  const finalStepCount = machineIndex + steppedMachines.length;
-
-  setMachines(completeTimeline);
-  setStepCount(finalStepCount);
-  setMachineIndex(0);
 }
 
 function App() {
-  const [machines, setMachines] = useState([createInitialMachine()]);
-  const [isMore, setMore] = useState(true);
-  const [machineIndex, setMachineIndex] = useState(0);
-  const [stepCount, setStepCount] = useState(0);
+  const initialState: AppState = {
+    machines: [createInitialMachine()],
+    isMore: true,
+    machineIndex: 0,
+    stepCount: 0
+  };
+
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  const { machines, isMore, machineIndex, stepCount } = state;
   const ctx = machines[machineIndex].currentProcedureContext();
   const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext() : undefined;
 
-  const pushMachine = useCallback((newMachine: Machine) => pushMachineHelper(machines, newMachine, setMachines), [machines, setMachines]);
+  const clickReset = useCallback(() => dispatch({ type: 'RESET' }), []);
 
-  const clickPrev = useCallback(() => clickPrevHelper(machineIndex, machines, setMachineIndex, setMore, setStepCount), [machineIndex, machines, setMachineIndex, setMore, setStepCount]);
+  const clickPrev = useCallback(() => dispatch({ type: 'PREV' }), []);
 
-  const clickReset = useCallback(() => clickResetHelper(setMachineIndex, setMachines, setMore, setStepCount), [setMachineIndex, setMachines, setMore, setStepCount]);
+  const clickNext = useCallback(() => dispatch({ type: 'NEXT' }), []);
 
-  const clickNext = useCallback(() => clickNextHelper(machineIndex, machines, pushMachine, setMachineIndex, setMore, setStepCount), [machineIndex, machines, pushMachine, setMachineIndex, setMore, setStepCount]);
-
-  const clickRunToEnd = useCallback(() => clickRunToEndHelper(machineIndex, machines, setMachineIndex, setMachines, setMore, setStepCount), [machineIndex, machines, setMachineIndex, setMachines, setMore, setStepCount]);
+  const clickRunToEnd = useCallback(() => dispatch({ type: 'RUN_TO_END' }), []);
 
   return (
     <div className="p-4 space-y-4">
