@@ -41,6 +41,10 @@ export class Machine {
   private _currentProcedureKey: string | null = null;
   [immerable] = true;
 
+  start() {
+    this.invokeProcedure('main');
+  }
+
   load(key: string, proc: CompiledProcedure) {
     this._memory.set(key, proc);
   }
@@ -49,6 +53,13 @@ export class Machine {
     this._currentProcedureKey = key;
     const newCtx = new ProcedureContext();
     this._stack.unshift(newCtx);
+  }
+
+  currentProcedure() {
+    if (this._currentProcedureKey) {
+      return this._memory.get(this._currentProcedureKey);
+    }
+    return null;
   }
 
   currentProcedureContext() {
