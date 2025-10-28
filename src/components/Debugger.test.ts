@@ -94,5 +94,14 @@ describe("Debugger actions", () => {
       expect(next.stepCount).toBe(0);
       expect(next.isMore).toBe(true);
     });
+
+    test("step back then run to end again", () => {
+      const prev = _reducer(_state, { type: "PREV" });
+      const next = _reducer(prev, { type: "RUN_TO_END" });
+      expect(next.machines).toHaveLength(4);
+      expect(next.machineIndex).toBe(0);
+      expect(next.stepCount).toBe(3);
+      expect(next.isMore).toBe(false);
+    });
   });
 });

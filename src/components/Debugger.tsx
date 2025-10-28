@@ -93,33 +93,25 @@ export function _reducer(state: DebuggerState, action: DebuggerAction): Debugger
     }
 
     case 'RUN_TO_END': {
-      const startMachine = state.machines[state.machineIndex];
-      let steppedMachines = [];
-      let currentMachine = startMachine;
+      let stepCount = state.stepCount + state.machineIndex;
+      const newMachines = [...state.machines];
 
       // Step forward to completion
       while(true) {
-        const nextMachine = stepMachine(currentMachine);
+        const nextMachine = stepMachine(newMachines[0]);
         if(nextMachine) {
-          steppedMachines.push(nextMachine);
-          currentMachine = nextMachine;
+          newMachines.unshift(nextMachine);
+          stepCount += 1;
         } else {
           break;
         }
       }
 
-      // Build complete timeline: machines before start + stepped machines
-      const beforeStart = state.machines.slice(state.machineIndex + 1);
-      const completeTimeline = [currentMachine, ...steppedMachines.reverse(), ...beforeStart];
-
-      // Calculate step count based on position in complete timeline
-      const finalStepCount = state.stepCount + steppedMachines.length;
-
       return {
-        machines: completeTimeline,
+        machines: newMachines,
         isMore: false,
         machineIndex: 0,
-        stepCount: finalStepCount
+        stepCount
       };
     }
 
