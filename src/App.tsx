@@ -9,7 +9,7 @@ import ProgramViewer from './components/ProgramViewer';
 
 function createInitialMachine(): Machine {
   const machine = new Machine();
-  machine.loadProcedure("findMax", findMaxProc);
+  machine.load("findMax", findMaxProc);
   machine.invokeProcedure("findMax");
   return machine;
 }

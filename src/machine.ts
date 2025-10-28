@@ -1,18 +1,19 @@
 import {immerable} from "immer";
+import {Memory} from "./memory";
 
-type ScriptingObject = any;
+type CompiledInstructionArg = any;
 
 export class ProcedureContext {
-  variables: {[key: string]: ScriptingObject} = Object.create(null);
-  stack: ScriptingObject[] = [];
+  variables: {[key: string]: CompiledInstructionArg} = Object.create(null);
+  stack: CompiledInstructionArg[] = [];
   pc: number = 0;
   [immerable] = true;
 }
 
-function pushStack(stack: ScriptingObject[], value: ScriptingObject) {
+function pushStack(stack: CompiledInstructionArg[], value: CompiledInstructionArg) {
   stack.push(value);
 }
-function popStack(stack: ScriptingObject[]) {
+function popStack(stack: CompiledInstructionArg[]) {
   return stack.pop();
 }
 
@@ -36,12 +37,12 @@ export type CompiledProcedure = CompiledInstruction[];
 
 export class Machine {
   private _stack: ProcedureContext[] = [];
-  private _procedureMap: {[key: string]: CompiledProcedure} = {};
+  private _memory = new Memory<CompiledInstructionArg>();
   private _currentProcedureKey: string | null = null;
   [immerable] = true;
 
-  loadProcedure(key: string, proc: CompiledProcedure) {
-    this._procedureMap[key] = proc;
+  load(key: string, proc: CompiledProcedure) {
+    this._memory.set(key, proc);
   }
 
   invokeProcedure(key: string) {
@@ -57,8 +58,8 @@ export class Machine {
   nextInstruction() {
     const ctx = this.currentProcedureContext();
     if (this._currentProcedureKey) {
-      const program = this._procedureMap[this._currentProcedureKey];
-      return program[ctx.pc];
+      const proc = this._memory.get(this._currentProcedureKey);
+      return proc[ctx.pc];
     }
     return null;
   }
@@ -82,7 +83,7 @@ export function stepProgram(ctx: ProcedureContext, instruction: CompiledInstruct
 }
 
 /** Instruction implementations **/
-function literal(ctx: ProcedureContext, obj: ScriptingObject) {
+function literal(ctx: ProcedureContext, obj: CompiledInstructionArg) {
   pushStack(ctx.stack, obj);
 }
 function getProperty(ctx: ProcedureContext) {
@@ -97,7 +98,7 @@ function getPropertyAtLiteral(ctx: ProcedureContext, key: string | number) {
 function setVariable(ctx: ProcedureContext, name: string) {
   ctx.variables[name] = popStack(ctx.stack);
 }
-function setVariableToLiteral(ctx: ProcedureContext, name: string, value: ScriptingObject) {
+function setVariableToLiteral(ctx: ProcedureContext, name: string, value: CompiledInstructionArg) {
   ctx.variables[name] = value;
 }
 function getVariable(ctx: ProcedureContext, name: string) {
