@@ -108,9 +108,9 @@ function greaterThan(ctx: ProcedureContext) {
   const a = popStack(ctx.stack);
   pushStack(ctx.stack, a > b);
 }
-function jumpIfTrue(ctx: ProcedureContext, deltaPc: number) {
+function jumpIfTrue(ctx: ProcedureContext, pc: number) {
   if (popStack(ctx.stack)) {
-    ctx.pc += deltaPc;
+    ctx.pc = pc - 1;
   }
 }
 function add(ctx: ProcedureContext) {
@@ -135,7 +135,7 @@ export const findMaxProc: CompiledProcedure = [
   emit(getVariable, 'i'),
   emit(getProperty),
   emit(greaterThan),
-  emit(jumpIfTrue, 4),
+  emit(jumpIfTrue, 13),
   // max = array[i]
   emit(getVariable, 'array'),
   emit(getVariable, 'i'),
@@ -152,6 +152,6 @@ export const findMaxProc: CompiledProcedure = [
   emit(getPropertyAtLiteral, 'length'),
   emit(getVariable, 'i'),
   emit(greaterThan),
-  emit(jumpIfTrue, -19),
+  emit(jumpIfTrue, 3),
   // End
 ]

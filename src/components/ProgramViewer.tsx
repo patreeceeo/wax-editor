@@ -23,7 +23,7 @@ export default function ProgramViewer({
     <pre className="program-viewer px-0">
       {program.map((instruction, index: number) => {
         const lineNumber = index;
-        const formattedLineNumber = formatLineNumber(lineNumber + 1, totalDigits);
+        const formattedLineNumber = formatLineNumber(lineNumber, totalDigits);
         const isCurrent = lineNumber === pc;
         const isPrevious = lineNumber === lastPc;
 
