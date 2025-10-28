@@ -33,15 +33,23 @@ function stepMachine(currentMachine: Machine): Machine | null {
   return null;
 }
 
-function reducer(state: DebuggerState, action: DebuggerAction): DebuggerState {
+export function _getInitialState(machine: Machine): DebuggerState {
+  return {
+    machines: [machine],
+    isMore: true,
+    machineIndex: 0,
+    stepCount: 0
+  };
+}
+
+/**
+* Reducer function to manage debugger state transitions.
+* Only exported for tests.
+*/
+export function _reducer(state: DebuggerState, action: DebuggerAction): DebuggerState {
   switch (action.type) {
     case 'RESET': {
-      return {
-        machines: [action.machine],
-        isMore: true,
-        machineIndex: 0,
-        stepCount: 0
-      };
+      return _getInitialState(action.machine);
     }
 
     case 'PREV': {
@@ -121,14 +129,9 @@ function reducer(state: DebuggerState, action: DebuggerAction): DebuggerState {
 }
 
 export default function Debugger({ machine: initialMachine }: DebuggerProps) {
-  const initialState: DebuggerState = {
-    machines: [initialMachine],
-    isMore: true,
-    machineIndex: 0,
-    stepCount: 0
-  };
+  const initialState = _getInitialState(initialMachine);
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(_reducer, initialState);
   const { machines, isMore, machineIndex, stepCount } = state;
   const ctx = machines[machineIndex].currentProcedureContext();
   const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext() : undefined;

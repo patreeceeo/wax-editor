@@ -27,7 +27,7 @@ export interface CompiledInstruction<Args extends any[] = any[]> {
 };
 
 /* Compiler functions */
-function emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args): CompiledInstruction<Args> {
+export function emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args): CompiledInstruction<Args> {
   return {fn, args};
 }
 /* End of compiler functions */
@@ -94,7 +94,7 @@ export function stepProgram(ctx: ProcedureContext, instruction: CompiledInstruct
 }
 
 /** Instruction implementations **/
-function literal(ctx: ProcedureContext, obj: CompiledInstructionArg) {
+export function literal(ctx: ProcedureContext, obj: CompiledInstructionArg) {
   pushStack(ctx.stack, obj);
 }
 function getProperty(ctx: ProcedureContext) {
@@ -115,7 +115,7 @@ function setVariableToLiteral(ctx: ProcedureContext, name: string, value: Compil
 function getVariable(ctx: ProcedureContext, name: string) {
   pushStack(ctx.stack, ctx.variables[name]);
 }
-function greaterThan(ctx: ProcedureContext) {
+export function greaterThan(ctx: ProcedureContext) {
   const b = popStack(ctx.stack);
   const a = popStack(ctx.stack);
   pushStack(ctx.stack, a > b);
@@ -125,7 +125,7 @@ function jumpIfTrue(ctx: ProcedureContext, pc: number) {
     ctx.pc = pc - 1;
   }
 }
-function add(ctx: ProcedureContext) {
+export function add(ctx: ProcedureContext) {
   const b = popStack(ctx.stack);
   const a = popStack(ctx.stack);
   pushStack(ctx.stack, a + b);
