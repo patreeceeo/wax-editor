@@ -1,11 +1,13 @@
 import {beforeEach, describe, expect, test} from "vitest";
-import {add, emit, literal, Machine} from "../machine";
+import {Machine} from "../machine";
 import {_getInitialState, _reducer} from "./Debugger";
+import {literal, add} from "../compiled_instructions";
+import {Compiler} from "../compiler";
 
 const program = [
-  emit(literal, 1),
-  emit(literal, 2),
-  emit(add)
+  Compiler.emit(literal, 1),
+  Compiler.emit(literal, 2),
+  Compiler.emit(add)
 ];
 
 const machine = new Machine();

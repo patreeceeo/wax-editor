@@ -1,4 +1,4 @@
-import { type CompiledProcedure } from '../machine';
+import { type CompiledProcedure } from '../compiled_procedure';
 
 interface ProgramViewerProps {
   program: CompiledProcedure;
