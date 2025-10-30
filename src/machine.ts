@@ -70,7 +70,7 @@ export class Machine {
     const ctx = this.currentProcedureContext();
     if (this._currentProcedureKey) {
       const proc = this._memory.get(this._currentProcedureKey);
-      return proc[ctx.pc];
+      return proc[ctx.pc] as CompiledInstruction;
     }
     return null;
   }
@@ -81,16 +81,6 @@ export class Machine {
     ctx.pc += 1;
     return result;
   }
-}
-
-export function nextInstruction(ctx: ProcedureContext, program: CompiledProcedure) {
-  return program[ctx.pc];
-}
-
-export function stepProgram(ctx: ProcedureContext, instruction: CompiledInstruction): true | void {
-  const result = instruction.fn(ctx, ...instruction.args);
-  ctx.pc += 1;
-  return result;
 }
 
 /** Instruction implementations **/
@@ -122,6 +112,7 @@ export function greaterThan(ctx: ProcedureContext) {
 }
 function jumpIfTrue(ctx: ProcedureContext, pc: number) {
   if (popStack(ctx.stack)) {
+    // Subtract 1 because applyInstruction will increment pc after this
     ctx.pc = pc - 1;
   }
 }
