@@ -1,8 +1,5 @@
-import {immerable} from "immer";
-
 /** * A simple in-memory key-value store with reference counting. */
 export class Memory<T> {
-  [immerable] = true;
   private _store: {[key: string]: {
     value: T
     refCount: number
@@ -28,5 +25,15 @@ export class Memory<T> {
         delete this._store[key];
       }
     }
+  }
+  clone(): Memory<T> {
+    const newMemory = new Memory<T>();
+    for (const key in this._store) {
+      newMemory._store[key] = {
+        value: this._store[key].value,
+        refCount: this._store[key].refCount
+      };
+    }
+    return newMemory;
   }
 }

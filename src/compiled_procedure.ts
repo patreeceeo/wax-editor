@@ -1,4 +1,3 @@
-import {immerable} from "immer";
 import type {Machine} from "./machine";
 
 export type CompiledProcedure = CompiledInstruction[];
@@ -16,7 +15,6 @@ export interface CompiledInstruction<Args extends any[] = any[]> {
 };
 
 export class ProcedureContext {
-  [immerable] = true;
   private _variables: {[key: string]: CompiledInstructionArg} = Object.create(null);
   private _stack: CompiledInstructionArg[] = [];
   private _machine: Machine;
@@ -51,6 +49,14 @@ export class ProcedureContext {
       stack: [...this._stack],
       pc: this.pc
     };
+  }
+
+  clone(): ProcedureContext {
+    const newCtx = new ProcedureContext(this._machine);
+    newCtx.pc = this.pc;
+    newCtx._variables = {...this._variables};
+    newCtx._stack = [...this._stack];
+    return newCtx;
   }
 }
 

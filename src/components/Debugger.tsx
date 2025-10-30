@@ -1,5 +1,4 @@
 import {useCallback, useReducer} from 'react';
-import {produce} from "immer";
 import {Machine} from '../machine';
 import JsonDiff from './JsonDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
@@ -26,9 +25,9 @@ type DebuggerAction =
 function stepMachine(currentMachine: Machine): Machine | null {
   const instruction = currentMachine.getInstruction();
   if(instruction) {
-    return produce(currentMachine, draft => {
-      draft.applyInstruction(instruction);
-    });
+    const newMachine = currentMachine.clone();
+    newMachine.applyInstruction(instruction);
+    return newMachine;
   }
   return null;
 }

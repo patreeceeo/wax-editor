@@ -1,4 +1,3 @@
-import {immerable} from "immer";
 import {Memory} from "./memory";
 import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type CompiledProcedure} from "./compiled_procedure";
 
@@ -6,7 +5,6 @@ export class Machine {
   private _stack: ProcedureContext[] = [];
   private _memory = new Memory<CompiledInstructionArg>();
   private _currentProcedureKey: string | null = null;
-  [immerable] = true;
 
   start() {
     this.invokeProcedure('main');
@@ -48,5 +46,14 @@ export class Machine {
     ctx.pc += 1;
     return result;
   }
+
+  clone(): Machine {
+    const newMachine = new Machine();
+    newMachine._memory = this._memory.clone();
+    newMachine._currentProcedureKey = this._currentProcedureKey;
+    newMachine._stack = this._stack.map(ctx => ctx.clone());
+    return newMachine;
+  }
+
 }
 
