@@ -1,11 +1,9 @@
 import { useMemo } from 'react'
 import { diffLines } from 'diff'
-import { ProcedureContext } from '../machine'
 
 interface ContextDiffProps {
-  currentContext: ProcedureContext
-  previousContext?: ProcedureContext
-  propertyName: keyof ProcedureContext
+  currentContext: any
+  previousContext?: any
   className?: string
 }
 
@@ -56,19 +54,16 @@ function stringify(obj: any) {
   return JSON.stringify(obj, null, 2)
 }
 
-export default function ContextDiff({
+export default function JsonDiff({
   currentContext,
   previousContext,
-  propertyName,
   className = ''
 }: ContextDiffProps) {
 
-  const currentProperty = currentContext[propertyName]
-  const previousProperty = previousContext ? previousContext[propertyName] : undefined
   return (
       <Diff
-        currentCode={stringify(currentProperty)}
-        previousCode={previousProperty ? stringify(previousProperty) : undefined}
+        currentCode={stringify(currentContext)}
+        previousCode={previousContext ? stringify(previousContext) : undefined}
         className={className}
       />
   )

@@ -1,30 +1,7 @@
 import {immerable} from "immer";
 import {Memory} from "./memory";
+import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type InstructionFn} from "./compiled_procedure";
 
-type CompiledInstructionArg = any;
-
-export class ProcedureContext {
-  variables: {[key: string]: CompiledInstructionArg} = Object.create(null);
-  stack: CompiledInstructionArg[] = [];
-  pc: number = 0;
-  [immerable] = true;
-}
-
-function pushStack(stack: CompiledInstructionArg[], value: CompiledInstructionArg) {
-  stack.push(value);
-}
-function popStack(stack: CompiledInstructionArg[]) {
-  return stack.pop();
-}
-
-interface InstructionFn<Args extends any[] = any[]> {
-  (ctx: ProcedureContext, ...args: Args): true | void;
-}
-
-export interface CompiledInstruction<Args extends any[] = any[]> {
-  fn: InstructionFn<Args>;
-  args: Args;
-};
 
 /* Compiler functions */
 export function emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args): CompiledInstruction<Args> {
@@ -85,41 +62,41 @@ export class Machine {
 
 /** Instruction implementations **/
 export function literal(ctx: ProcedureContext, obj: CompiledInstructionArg) {
-  pushStack(ctx.stack, obj);
+  ctx.push(obj);
 }
 function getProperty(ctx: ProcedureContext) {
-  const property = popStack(ctx.stack);
-  const object = popStack(ctx.stack);
-  pushStack(ctx.stack, object[property]);
+  const property = ctx.pop();
+  const object = ctx.pop();
+  ctx.push(object[property]);
 }
 function getPropertyAtLiteral(ctx: ProcedureContext, key: string | number) {
-  const obj = popStack(ctx.stack);
-  pushStack(ctx.stack, obj[key]);
+  const obj = ctx.pop();
+  ctx.push(obj[key]);
 }
 function setVariable(ctx: ProcedureContext, name: string) {
-  ctx.variables[name] = popStack(ctx.stack);
+  ctx.set(name, ctx.pop());
 }
 function setVariableToLiteral(ctx: ProcedureContext, name: string, value: CompiledInstructionArg) {
-  ctx.variables[name] = value;
+  ctx.set(name, value);
 }
 function getVariable(ctx: ProcedureContext, name: string) {
-  pushStack(ctx.stack, ctx.variables[name]);
+  ctx.push(ctx.get(name));
 }
 export function greaterThan(ctx: ProcedureContext) {
-  const b = popStack(ctx.stack);
-  const a = popStack(ctx.stack);
-  pushStack(ctx.stack, a > b);
+  const b = ctx.pop();
+  const a = ctx.pop();
+  ctx.push(a > b);
 }
 function jumpIfTrue(ctx: ProcedureContext, pc: number) {
-  if (popStack(ctx.stack)) {
+  if (ctx.pop()) {
     // Subtract 1 because applyInstruction will increment pc after this
     ctx.pc = pc - 1;
   }
 }
 export function add(ctx: ProcedureContext) {
-  const b = popStack(ctx.stack);
-  const a = popStack(ctx.stack);
-  pushStack(ctx.stack, a + b);
+  const b = ctx.pop();
+  const a = ctx.pop();
+  ctx.push(a + b);
 }
 /** End of instruction implementations **/
 
