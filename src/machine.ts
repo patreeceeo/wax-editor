@@ -18,7 +18,7 @@ export class Machine {
 
   invokeProcedure(key: string) {
     this._currentProcedureKey = key;
-    const newCtx = new ProcedureContext();
+    const newCtx = new ProcedureContext(this);
     this._stack.unshift(newCtx);
   }
 

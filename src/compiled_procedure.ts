@@ -1,4 +1,5 @@
 import {immerable} from "immer";
+import type {Machine} from "./machine";
 
 export type CompiledProcedure = CompiledInstruction[];
 
@@ -18,6 +19,15 @@ export class ProcedureContext {
   [immerable] = true;
   private _variables: {[key: string]: CompiledInstructionArg} = Object.create(null);
   private _stack: CompiledInstructionArg[] = [];
+  private _machine: Machine;
+
+  constructor(machine: Machine) {
+    this._machine = machine;
+  }
+
+  get machine() {
+    return this._machine;
+  }
 
   pc: number = 0;
 
