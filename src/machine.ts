@@ -1,6 +1,6 @@
 import {immerable} from "immer";
 import {Memory} from "./memory";
-import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type InstructionFn} from "./compiled_procedure";
+import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type CompiledProcedure, type InstructionFn} from "./compiled_procedure";
 
 
 /* Compiler functions */
@@ -8,9 +8,6 @@ export function emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args)
   return {fn, args};
 }
 /* End of compiler functions */
-
-export type CompiledProcedure = CompiledInstruction[];
-
 
 export class Machine {
   private _stack: ProcedureContext[] = [];

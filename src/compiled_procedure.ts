@@ -1,5 +1,7 @@
 import {immerable} from "immer";
 
+export type CompiledProcedure = CompiledInstruction[];
+
 export type CompiledInstructionArg = any;
 
 
