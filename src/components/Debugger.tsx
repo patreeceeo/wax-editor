@@ -25,9 +25,9 @@ type DebuggerAction =
 function stepMachine(currentMachine: Machine): Machine | null {
   const instruction = currentMachine.getInstruction();
   if(instruction) {
-    const newMachine = currentMachine.clone();
-    newMachine.applyInstruction(instruction);
-    return newMachine;
+    return currentMachine.produce((draft) => {
+      draft.applyInstruction(instruction);
+    });
   }
   return null;
 }

@@ -1,7 +1,8 @@
 import {Memory} from "./memory";
 import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type CompiledProcedure} from "./compiled_procedure";
+import {PersistentObject} from "./persistent_object";
 
-export class Machine {
+export class Machine extends PersistentObject {
   private _stack: ProcedureContext[] = [];
   private _memory = new Memory<CompiledInstructionArg>();
   private _currentProcedureKey: string | null = null;
@@ -47,13 +48,11 @@ export class Machine {
     return result;
   }
 
-  clone(): Machine {
-    const newMachine = new Machine();
-    newMachine._memory = this._memory.clone();
-    newMachine._currentProcedureKey = this._currentProcedureKey;
-    newMachine._stack = this._stack.map(ctx => ctx.clone());
-    return newMachine;
+  afterProduce(): void {
+    // All of my contexts should point to me instead of the previous machine
+    for (const ctx of this._stack) {
+      ctx._setMachine(this);
+    }
   }
-
 }
 

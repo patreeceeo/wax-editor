@@ -27,6 +27,10 @@ export class ProcedureContext {
     return this._machine;
   }
 
+  _setMachine(machine: Machine) {
+    this._machine = machine;
+  }
+
   pc: number = 0;
 
   push(value: CompiledInstructionArg) {
@@ -49,14 +53,6 @@ export class ProcedureContext {
       stack: [...this._stack],
       pc: this.pc
     };
-  }
-
-  clone(): ProcedureContext {
-    const newCtx = new ProcedureContext(this._machine);
-    newCtx.pc = this.pc;
-    newCtx._variables = {...this._variables};
-    newCtx._stack = [...this._stack];
-    return newCtx;
   }
 }
 
