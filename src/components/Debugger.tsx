@@ -1,5 +1,6 @@
 import {useCallback, useReducer} from 'react';
 import {Machine} from '../machine';
+import {MachineProvider} from './MachineContext';
 import JsonDiff from './JsonDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
 import Button from './Button';
@@ -154,31 +155,33 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
         </Button>
       </div>
       <h3>Step Count: {stepCount}</h3>
-      <div className="flex space-x-4">
-        <div>
-          <h2>Instructions</h2>
-          <ProgramViewer program={program} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
-        </div>
-        <div className="flex-1 space-y-4">
-          <h2>State</h2>
-          <div className="flex space-x-4">
-            <div>
-              <h3 className="mt-0">Variables</h3>
-              <JsonDiff
-                currentContext={ctx.variables}
-                previousContext={previousCtx ? previousCtx['variables'] : undefined}
-              />
-            </div>
-            <div>
-              <h3 className="mt-0">Stack</h3>
-              <JsonDiff
-                currentContext={ctx.stack}
-                previousContext={previousCtx ? previousCtx['stack'] : undefined}
-              />
+      <MachineProvider machine={machines[0]}>
+        <div className="flex space-x-4">
+          <div>
+            <h2>Instructions</h2>
+            <ProgramViewer program={program} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
+          </div>
+          <div className="flex-1 space-y-4">
+            <h2>State</h2>
+            <div className="flex space-x-4">
+              <div>
+                <h3 className="mt-0">Variables</h3>
+                <JsonDiff
+                  currentContext={ctx.variables}
+                  previousContext={previousCtx ? previousCtx['variables'] : undefined}
+                />
+              </div>
+              <div>
+                <h3 className="mt-0">Stack</h3>
+                <JsonDiff
+                  currentContext={ctx.stack}
+                  previousContext={previousCtx ? previousCtx['stack'] : undefined}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </MachineProvider>
     </>
   )
 }
