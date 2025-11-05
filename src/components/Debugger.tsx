@@ -159,7 +159,7 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
         <div className="flex space-x-4">
           <div>
             <h2>Instructions</h2>
-            <ProgramViewer program={program} pc={ctx.pc} lastPc={previousCtx?.pc ?? 0}/>
+            <ProgramViewer program={program} lastPc={previousCtx?.pc ?? 0}/>
           </div>
           <div className="flex-1 space-y-4">
             <h2>State</h2>

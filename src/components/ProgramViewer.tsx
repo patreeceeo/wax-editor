@@ -1,8 +1,8 @@
 import { CompiledProcedure, type CompiledInstruction } from '../compiled_procedure';
+import { useMachine } from './MachineContext';
 
 interface ProgramViewerProps {
   program: CompiledProcedure;
-  pc: number;
   lastPc: number;
 }
 
@@ -13,22 +13,23 @@ const formatLineNumber = (lineNumber: number, totalDigits: number) => {
 
 export default function ProgramViewer({
   program,
-  pc,
   lastPc
 }: ProgramViewerProps) {
   return (
     <pre className="program-viewer px-0">
-      <Procedure procedure={program} pc={pc} lastPc={lastPc} />
+      <Procedure procedure={program} lastPc={lastPc} />
     </pre>
   )
 }
 
 function Procedure({
   procedure,
-  pc,
   lastPc
-}: { procedure: CompiledProcedure; pc: number; lastPc: number}) {
+}: { procedure: CompiledProcedure; lastPc: number}) {
   const totalDigits = procedure.length > 0 ? Math.floor(Math.log10(procedure.length)) + 1 : 1;
+  const { machine } = useMachine();
+  const pc = machine.currentProcedureContext()?.pc ?? 0;
+  const isCurrent = machine.currentProcedure() === procedure;
 
   return <>
     {procedure.map((instruction, index) => (
@@ -37,7 +38,7 @@ function Procedure({
         instruction={instruction}
         lineNumber={index}
         totalDigits={totalDigits}
-        isCurrent={index === pc}
+        isCurrent={isCurrent && index === pc}
         isPrevious={index === lastPc}
       />
     ))}
@@ -88,7 +89,7 @@ function InstructionArg({ arg }: { arg: any }) {
     );
   } else if (typeof arg === 'object') {
     if(CompiledProcedure.isInstance(arg)) {
-      return <Procedure procedure={arg} pc={-1} lastPc={-1} />;
+      return <Procedure procedure={arg} lastPc={-1} />;
     }
     return (
       <span>
