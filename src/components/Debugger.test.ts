@@ -3,15 +3,16 @@ import {Machine} from "../machine";
 import {_getInitialState, _reducer} from "./Debugger";
 import {literal, add} from "../compiled_instructions";
 import {Compiler} from "../compiler";
+import {CompiledProcedure} from "../compiled_procedure";
 
-const program = [
+const program = new CompiledProcedure([
   Compiler.emit(literal, 1),
   Compiler.emit(literal, 2),
   Compiler.emit(add)
-];
+]);
 
 const machine = new Machine();
-machine.load("main", program);
+machine.loadMemory("main", program);
 machine.start();
 
 describe("Debugger actions", () => {

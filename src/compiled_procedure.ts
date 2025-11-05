@@ -1,6 +1,32 @@
 import type {Machine} from "./machine";
 
-export type CompiledProcedure = CompiledInstruction[];
+const CompiledProcedureSymbol = Symbol("CompiledProcedure");
+
+// export type CompiledProcedure = CompiledInstruction[];
+export class CompiledProcedure {
+  static isInstance(value: any): value is CompiledProcedure {
+    return CompiledProcedureSymbol in value;
+  }
+  [CompiledProcedureSymbol] = true;
+  private body: CompiledInstruction[];
+  constructor(instructions: CompiledInstruction[] = []) {
+    this.body = instructions;
+  }
+  get length() {
+    return this.body.length;
+  }
+  at(index: number): CompiledInstruction | undefined {
+    // Array.at is still somewhat new and may not be supported everywhere
+    const length = this.body.length;
+    return this.body[index < 0 ? length + (index % length) : (index % length)];
+  }
+  append(...instruction: CompiledInstruction[]) {
+    this.body.push(...instruction);
+  }
+  map<T>(fn: (instr: CompiledInstruction, index: number) => T): T[] {
+    return this.body.map(fn);
+  }
+}
 
 export type CompiledInstructionArg = any;
 
@@ -14,17 +40,30 @@ export interface CompiledInstruction<Args extends any[] = any[]> {
   args: Args;
 };
 
+interface ProcedureContextInit {
+  machine: Machine;
+  procedure: CompiledProcedure;
+}
+
 export class ProcedureContext {
   private _variables: {[key: string]: CompiledInstructionArg} = Object.create(null);
   private _stack: CompiledInstructionArg[] = [];
   private _machine: Machine;
+  private _returnValues: CompiledInstructionArg[] = [];
 
-  constructor(machine: Machine) {
+  private _procedure: CompiledProcedure;
+
+  constructor({machine, procedure}: ProcedureContextInit) {
     this._machine = machine;
+    this._procedure = procedure;
   }
 
   get machine() {
     return this._machine;
+  }
+
+  get procedure() {
+    return this._procedure
   }
 
   _setMachine(machine: Machine) {
@@ -45,6 +84,13 @@ export class ProcedureContext {
   }
   get(name: string) {
     return this._variables[name];
+  }
+
+  pushReturnValue(value: CompiledInstructionArg) {
+    this._returnValues.push(value);
+  }
+  acceptReturnValues(otherCtx: ProcedureContext): void {
+    this._stack.push(...otherCtx._returnValues);
   }
 
   toJSON() {

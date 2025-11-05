@@ -2,58 +2,121 @@ import {useMemo} from 'react';
 import './App.css'
 import { Machine } from './machine';
 import Debugger from './components/Debugger';
-import type {CompiledProcedure} from './compiled_procedure';
 import {Compiler} from './compiler';
-import {
-  setVariableToLiteral,
-  getVariable,
-  getProperty,
-  greaterThan,
-  jumpIfTrue,
-  setVariable,
-  literal,
-  add,
-  getPropertyAtLiteral
-} from './compiled_instructions';
+import {AssignmentStatementNode, FunctionExpressionNode, GetVariableNode, JsLiteralNode, ProgramNode, SendMessageExpressionNode} from './abstract_syntax_tree';
 
-// Example: Find the max element in an array
-export const findMaxProc: CompiledProcedure = [
-  // array = [...]
-  Compiler.emit(setVariableToLiteral, 'array', [3, 1, 4, 1, 5, 9, 2, 6, 5]),
-  // max = 0
-  Compiler.emit(setVariableToLiteral, 'max', 0),
-  // i = 0
-  Compiler.emit(setVariableToLiteral, 'i', 0),
-  // Loop start
-  // max > array[i]
-  Compiler.emit(getVariable, 'max'),
-  Compiler.emit(getVariable, 'array'),
-  Compiler.emit(getVariable, 'i'),
-  Compiler.emit(getProperty),
-  Compiler.emit(greaterThan),
-  Compiler.emit(jumpIfTrue, 13),
-  // max = array[i]
-  Compiler.emit(getVariable, 'array'),
-  Compiler.emit(getVariable, 'i'),
-  Compiler.emit(getProperty),
-  Compiler.emit(setVariable, 'max'),
-  // i = i + 1
-  Compiler.emit(getVariable, 'i'),
-  Compiler.emit(literal, 1),
-  Compiler.emit(add),
-  Compiler.emit(setVariable, 'i'),
-  // Loop condition: array.length > i
-  Compiler.emit(getVariable, 'array'),
-  Compiler.emit(getPropertyAtLiteral, 'length'),
-  Compiler.emit(getVariable, 'i'),
-  Compiler.emit(greaterThan),
-  Compiler.emit(jumpIfTrue, 3),
-  // End
-]
+const isIndexLessThanArrayLengthAst = new FunctionExpressionNode({
+  params: [],
+  body: [
+    new SendMessageExpressionNode({
+      receiver: new SendMessageExpressionNode({
+        receiver: new GetVariableNode({name: 'array'}),
+        message: 'length',
+        args: []
+      }),
+      message: '>',
+      args: [
+        new GetVariableNode({name: 'i'})
+      ]
+    })
+  ]
+});
+
+const getCurrentElementAst = new ProgramNode({
+  body: [
+    new SendMessageExpressionNode({
+      receiver: new GetVariableNode({name: 'array'}),
+      message: 'at:',
+      args: [
+        new GetVariableNode({name: 'i'})
+      ]
+    })
+  ]
+});
+
+const isCurrentGreaterThanMaxAst = new ProgramNode({
+  body: [
+    new SendMessageExpressionNode({
+      receiver: getCurrentElementAst,
+      message: '>',
+      args: [
+        new GetVariableNode({name: 'max'}),
+      ]
+    })
+  ]
+});
+
+const maybeUpdateMaxAst = new ProgramNode({
+  body: [
+    new SendMessageExpressionNode({
+      receiver: isCurrentGreaterThanMaxAst,
+      message: 'ifTrue',
+      args: [
+        new FunctionExpressionNode({
+          params: [],
+          body: [
+            new AssignmentStatementNode({
+              variableName: 'max',
+              valueExpression: getCurrentElementAst
+            })
+          ]
+        })
+      ]
+    })
+  ]
+});
+
+
+const incrementIndexAst = new ProgramNode({
+  body: [
+    new AssignmentStatementNode({
+      variableName: 'i',
+      valueExpression: new SendMessageExpressionNode({
+        receiver: new GetVariableNode({name: 'i'}),
+        message: '+',
+        args: [
+          new JsLiteralNode({value: 1})
+        ]
+      }),
+    })
+  ]
+})
+
+const findMaxProgramAst = new ProgramNode({
+  body: [
+    new AssignmentStatementNode({
+      variableName: 'array',
+      valueExpression: new JsLiteralNode({value: [3, 1, 4, 1, 5, 9, 2, 6, 5]})
+    }),
+    new AssignmentStatementNode({
+      variableName: 'max',
+      valueExpression: new JsLiteralNode({value: 0})
+    }),
+    new AssignmentStatementNode({
+      variableName: 'i',
+      valueExpression: new JsLiteralNode({value: 0})
+    }),
+    new SendMessageExpressionNode({
+      receiver: isIndexLessThanArrayLengthAst,
+      message: 'whileTrue',
+      args: [
+        new FunctionExpressionNode({
+          params: [],
+          body: [
+            maybeUpdateMaxAst,
+            incrementIndexAst
+          ]
+        })
+      ]
+    })
+  ]
+});
+
 
 function createInitialMachine(): Machine {
   const machine = new Machine();
-  machine.load("main", findMaxProc)
+  const compiler = new Compiler({machine});
+  compiler.compile(findMaxProgramAst);
   machine.start();
   return machine;
 }

@@ -1,3 +1,4 @@
+// TODO use WeakMap with memoized key objects
 /** * A simple in-memory key-value store with reference counting. */
 export class Memory<T> {
   private _store: {[key: string]: {

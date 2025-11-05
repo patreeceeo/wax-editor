@@ -124,10 +124,10 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
 
   const [state, dispatch] = useReducer(_reducer, initialState);
   const { machines, isMore, machineIndex, stepCount } = state;
-  const ctx = machines[machineIndex].currentProcedureContext().toJSON();
-  const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext().toJSON() : undefined;
+  const ctx = machines[machineIndex].currentProcedureContext()!.toJSON();
+  const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext()!.toJSON() : undefined;
 
-  const program = machines[0].currentProcedure()!;
+  const program = machines[0].readMemory("main")!;
 
   const clickReset = useCallback(() => dispatch({ type: 'RESET', machine: initialMachine }), [initialMachine]);
 
