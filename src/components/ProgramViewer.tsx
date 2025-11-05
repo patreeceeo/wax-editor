@@ -16,8 +16,6 @@ export default function ProgramViewer({
   pc,
   lastPc
 }: ProgramViewerProps) {
-  // Calculate the number of digits needed for the last line number
-
   return (
     <pre className="program-viewer px-0">
       <Procedure procedure={program} pc={pc} lastPc={lastPc} />
