@@ -50,7 +50,7 @@ export class Machine extends PersistentObject {
     const procedure = this.currentProcedure();
     invariant(ctx !== undefined, "No current procedure context to get instruction from.");
     invariant(procedure !== null, "No current procedure to get instruction from.");
-    return null;
+    return procedure.at(ctx.pc);
   }
 
   applyInstruction(instruction: CompiledInstruction): true | void {
