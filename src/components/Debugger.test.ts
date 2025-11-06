@@ -5,11 +5,13 @@ import {literal, add} from "../compiled_instructions";
 import {Compiler} from "../compiler";
 import {CompiledProcedure} from "../compiled_procedure";
 
-const program = new CompiledProcedure([
-  Compiler.emit(literal, 1),
-  Compiler.emit(literal, 2),
-  Compiler.emit(add)
-]);
+const program = new CompiledProcedure({
+  instructions: [
+    Compiler.emit(literal, 1),
+    Compiler.emit(literal, 2),
+    Compiler.emit(add)
+  ]
+});
 
 const machine = new Machine();
 machine.loadMemory("main", program);

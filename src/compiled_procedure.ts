@@ -2,6 +2,10 @@ import type {Machine} from "./machine";
 
 const CompiledProcedureSymbol = Symbol("CompiledProcedure");
 
+interface CompiledProcedureInit {
+  instructions?: CompiledInstruction[];
+}
+
 // export type CompiledProcedure = CompiledInstruction[];
 export class CompiledProcedure {
   static isInstance(value: any): value is CompiledProcedure {
@@ -9,7 +13,7 @@ export class CompiledProcedure {
   }
   [CompiledProcedureSymbol] = true;
   private body: CompiledInstruction[];
-  constructor(instructions: CompiledInstruction[] = []) {
+  constructor({instructions = []}: CompiledProcedureInit = {}) {
     this.body = instructions;
   }
   get length() {
