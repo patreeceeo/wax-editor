@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { diffLines } from 'diff'
+import stringifyJson from 'json-stringify-safe'
 
 interface ContextDiffProps {
   currentContext: any
@@ -50,9 +51,6 @@ export function Diff({
   )
 }
 
-function stringify(obj: any) {
-  return JSON.stringify(obj, null, 2)
-}
 
 export default function JsonDiff({
   currentContext,
@@ -62,8 +60,8 @@ export default function JsonDiff({
 
   return (
       <Diff
-        currentCode={stringify(currentContext)}
-        previousCode={previousContext ? stringify(previousContext) : undefined}
+        currentCode={stringifyJson(currentContext, null, 2)}
+        previousCode={previousContext ? stringifyJson(previousContext, null, 2) : undefined}
         className={className}
       />
   )
