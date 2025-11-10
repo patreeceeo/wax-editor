@@ -1,5 +1,7 @@
 # 🧭 Pull Request Evaluation Rubric
 
+Please evaluate the proposed changes using the following rubric.
+
 **Project Stack:** TypeScript · React · Vite · Vitest · TailwindCSS · ESLint
 **Purpose:** Assess the technical, architectural, and intellectual rigor of a pull request.
 
