@@ -7,12 +7,10 @@
 
 ## 1. Understanding and Research (20%)
 
-| Criteria | ✓ / ✗ | Notes |
-|-----------|--------|-------|
-| **Contextual Awareness:** Demonstrates clear understanding of how the change fits into the overall architecture and existing codebase. |  |  |
-| **Research & Inquiry:** Evidence of thoughtful research, asking questions, testing alternatives, or referencing docs/discussions. |  |  |
+- [ ] **Contextual Awareness:** Demonstrates clear understanding of how the change fits into the overall architecture and existing codebase.
+- [ ] **Research & Inquiry:** Evidence of thoughtful research, asking questions, testing alternatives, or referencing docs/discussions.
 
----
+### Notes
 
 ## 2. Code Quality & Architecture (25%)
 
@@ -64,29 +62,11 @@
 
 ---
 
-## ✅ Scoring Summary
-
-| Category | Weight | Score |
-|-----------|--------|-------|
-| Understanding & Research | 20% |   |
-| Code Quality & Architecture | 25% |   |
-| Use of Tools & Frameworks | 15% |   |
-| Debuggability & Robustness | 15% |   |
-| Code Hygiene & Process | 15% |   |
-| Technical Judgment | 10% |   |
-| **Total** | **100%** |   |
-
----
-
 ## ✍️ Evaluator Notes
 
 - What questions did the contributor ask before implementing?  
 - How does this change improve the long-term health of the codebase?  
 - What tradeoffs were made, and are they documented or justified?  
 
----
 
-### 🧩 Suggested Usage
-- Place this file as `.github/PULL_REQUEST_REVIEW_RUBRIC.md`, or  
-- Embed key sections into your `pull_request_template.md` for quick scoring.
 
