@@ -1,10 +1,9 @@
 import {useCallback, useState, type ToggleEvent} from "react";
-import {objectClass, WaxClass} from "../wax_classes";
+import {jsObjectClass, WaxClass} from "../wax_classes";
 
 interface TreeViewProps {
   value: any;
   label?: string | number;
-  depth?: number;
   inline?: boolean;
 }
 
@@ -12,7 +11,7 @@ function WaxClassView({ value, waxClass }: { value: any, waxClass: WaxClass }) {
   return waxClass.renderReact(value);
 }
 
-export function TreeView({ value, label, depth = 0, inline }: TreeViewProps) {
+export function TreeView({ value, label, inline }: TreeViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const waxClass = WaxClass.forJsObject(value);
   const isValueClass = WaxClass.isValueClass(waxClass);
@@ -28,18 +27,9 @@ export function TreeView({ value, label, depth = 0, inline }: TreeViewProps) {
   const ContainerTagName = isEmpty ? 'div' : 'details';
 
   return <ContainerTagName onToggle={handleToggle} open={isExpanded} className={"TreeView" + (inline ? " inline-block" : "")}>
-    {waxClass === objectClass && (
-      <>
-        <Label value={value} label={label} />
-        {isExpanded && (
-          <TreeViewEntriesHelper entries={entries as [string | number, any][]} isEmpty={isEmpty} depth={depth} />
-        )}
-      </>
-    )}
-    {waxClass !== objectClass && (
-      <>
-        <Label value={value} label={label} isReference={!isValueClass}/><WaxClassView value={value} waxClass={waxClass}/>
-      </>
+      <Label value={value} label={label} isReference={!isValueClass}/>
+    {(waxClass !== jsObjectClass || isExpanded) && (
+      <WaxClassView value={value} waxClass={waxClass}/>
     )}
   </ContainerTagName>;
 }
@@ -74,19 +64,9 @@ function Label({ value, label, isReference = true }: { value: any, label?: strin
   )
 }
 
-export function TreeViewEntries({value, depth = 0}: TreeViewProps) {
+export function TreeViewEntries({value}: TreeViewProps) {
   const entries = getEntries(value);
   const isEmpty = entries.length === 0;
-  return (
-    <TreeViewEntriesHelper
-      isEmpty={isEmpty}
-      entries={entries}
-      depth={depth}
-    />
-  )
-}
-
-function TreeViewEntriesHelper({isEmpty, entries, depth}: {isEmpty: boolean, entries: [string | number, any][], depth: number}) {
   return !isEmpty && (
     <div className="ml-8 border-l-2 border-gray-200">
       {entries.map(([key, value]) => (
@@ -94,10 +74,10 @@ function TreeViewEntriesHelper({isEmpty, entries, depth}: {isEmpty: boolean, ent
           key={key}
           value={value}
           label={key}
-          depth={depth + 1}
         />
       ))}
     </div>
   );
 }
+
 

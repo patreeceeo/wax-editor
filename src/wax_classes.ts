@@ -44,7 +44,7 @@ export class WaxClass {
           return arrayClass;
         }
     }
-    return objectClass;
+    return jsObjectClass;
   }
 
   private _methods: {[key: string]: CompiledProcedure};
@@ -66,7 +66,6 @@ export class WaxClass {
   }));
 }
 
-export const objectClass = new WaxClass();
 
 export const nilClass = new class extends WaxClass {
   renderReact = thunkValueObject((() => {
@@ -94,6 +93,10 @@ export const numberClass = new class extends WaxClass {
 
 export const procedureClass = new class extends WaxClass {
   renderReact = thunkComponent("value", ProgramViewer)
+}
+
+export const jsObjectClass = new class extends WaxClass {
+  renderReact = thunkComponent("value", TreeViewEntries)
 }
 
 export const arrayClass = new class extends WaxClass {
