@@ -1,10 +1,22 @@
 import {CompiledProcedure} from "./compiled_procedure";
+import {thunkComponent} from "./components/helpers";
+import ProgramViewer from "./components/ProgramViewer";
+import {TreeViewEntries} from "./components/TreeView";
+import { thunkValueObject } from "./components/ValueObject";
 
 interface WaxClassInit {
   methods?: {[key: string]: CompiledProcedure};
 }
 
 export class WaxClass {
+  static isValueClass(waxClass: WaxClass): boolean {
+    return waxClass === nilClass ||
+      waxClass === trueClass ||
+      waxClass === falseClass ||
+      waxClass === numberClass ||
+      waxClass === stringClass ||
+      waxClass === jsFunctionClass;
+  }
   static forJsObject(value: any): WaxClass | undefined {
     if (value === true) {
       return trueClass;
@@ -12,8 +24,25 @@ export class WaxClass {
     if (value === false) {
       return falseClass;
     }
-    if(typeof value === "number") {
-      return numberClass;
+    if(value === null || value === undefined) {
+      return nilClass;
+    }
+    switch(typeof value) {
+      case "string":
+        return stringClass;
+      case "function":
+        return jsFunctionClass;
+      case "symbol":
+        return symbolClass;
+      case "number":
+        return numberClass;
+      case "object":
+        if(CompiledProcedure.isInstance(value)) {
+          return procedureClass;
+        }
+        if(Array.isArray(value)) {
+          return arrayClass;
+        }
     }
   }
 
@@ -30,10 +59,57 @@ export class WaxClass {
     this._methods[name] = procedure;
     return this;
   }
+
+  renderReact = thunkValueObject(((value: any) => {
+    return {value: String(value), color: "gray" };
+  }));
 }
 
-export const trueClass: WaxClass = new WaxClass();
+export const nilClass = new class extends WaxClass {
+  renderReact = thunkValueObject((() => {
+    return {value: "nil", color: "pink" };
+  }))
+}
 
-export const falseClass: WaxClass = new WaxClass();
+export const trueClass = new class extends WaxClass {
+  renderReact = thunkValueObject((() => {
+    return {value: "true", color: "green" };
+  }))
+}
 
-export const numberClass: WaxClass = new WaxClass();
+export const falseClass = new class extends WaxClass {
+  renderReact = thunkValueObject((() => {
+    return {value: "false", color: "red" };
+  }))
+}
+
+export const numberClass = new class extends WaxClass {
+  renderReact = thunkValueObject((jsValue: number) => {
+    return {value: String(jsValue), color: "blue" };
+  })
+}
+
+export const procedureClass = new class extends WaxClass {
+  renderReact = thunkComponent("value", ProgramViewer)
+}
+
+export const arrayClass = new class extends WaxClass {
+  renderReact = thunkComponent("value", TreeViewEntries)
+}
+
+export const stringClass = new class extends WaxClass {
+  renderReact = thunkValueObject((jsValue: string) => {
+    return {value: `“${jsValue}”`, color: "yellow" };
+  })
+}
+
+export const symbolClass = new WaxClass();
+
+export const jsFunctionClass = new class extends WaxClass {
+  renderReact = thunkValueObject((jsValue: Function) => {
+    const name = jsValue.name || "(anonymous)";
+    return {value: `function ${name}()`, color: "purple" };
+  })
+}
+
+

@@ -1,0 +1,18 @@
+
+.TreeView {
+  user-select: none;
+
+
+  summary.TreeView_summary {
+    cursor: pointer;
+
+    &::marker {
+    }
+  }
+
+  span.TreeView_summary {
+    /* Indent summary to align with lines that have the marker */
+    margin-left: 1rem;
+    list-style: none;
+  }
+}
