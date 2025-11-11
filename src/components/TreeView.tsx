@@ -1,6 +1,5 @@
 import {useCallback, useState, type ToggleEvent} from "react";
-import {WaxClass} from "../wax_classes";
-import {invariant} from "../error";
+import {objectClass, WaxClass} from "../wax_classes";
 
 interface TreeViewProps {
   value: any;
@@ -29,7 +28,7 @@ export function TreeView({ value, label, depth = 0, inline }: TreeViewProps) {
   const ContainerTagName = isEmpty ? 'div' : 'details';
 
   return <ContainerTagName onToggle={handleToggle} open={isExpanded} className={"TreeView" + (inline ? " inline-block" : "")}>
-    {waxClass === undefined && (
+    {waxClass === objectClass && (
       <>
         <Label value={value} label={label} />
         {isExpanded && (
@@ -37,7 +36,7 @@ export function TreeView({ value, label, depth = 0, inline }: TreeViewProps) {
         )}
       </>
     )}
-    {waxClass !== undefined && (
+    {waxClass !== objectClass && (
       <>
         <Label value={value} label={label} isReference={!isValueClass}/><WaxClassView value={value} waxClass={waxClass}/>
       </>
