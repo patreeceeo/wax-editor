@@ -9,6 +9,7 @@ interface WaxClassInit {
 }
 
 export class WaxClass {
+  displayName = "Unknown";
   static isValueClass(waxClass: WaxClass): boolean {
     return waxClass === nilClass ||
       waxClass === trueClass ||
@@ -68,42 +69,50 @@ export class WaxClass {
 
 
 export const nilClass = new class extends WaxClass {
+  displayName = "Nil";
   renderReact = thunkValueObject((() => {
     return {value: "nil", color: "pink" };
   }))
 }
 
 export const trueClass = new class extends WaxClass {
+  displayName = "True";
   renderReact = thunkValueObject((() => {
     return {value: "true", color: "green" };
   }))
 }
 
 export const falseClass = new class extends WaxClass {
+  displayName = "False";
   renderReact = thunkValueObject((() => {
     return {value: "false", color: "red" };
   }))
 }
 
 export const numberClass = new class extends WaxClass {
+  displayName = "Number";
   renderReact = thunkValueObject((jsValue: number) => {
     return {value: String(jsValue), color: "blue" };
   })
 }
 
 export const procedureClass = new class extends WaxClass {
+  displayName = "Procedure";
   renderReact = thunkComponent("value", ProgramViewer)
 }
 
 export const jsObjectClass = new class extends WaxClass {
+  displayName = "JsObject";
   renderReact = thunkComponent("value", TreeViewEntries)
 }
 
 export const arrayClass = new class extends WaxClass {
+  displayName = "Array";
   renderReact = thunkComponent("value", TreeViewEntries)
 }
 
 export const stringClass = new class extends WaxClass {
+  displayName = "String";
   renderReact = thunkValueObject((jsValue: string) => {
     return {value: `“${jsValue}”`, color: "yellow" };
   })
@@ -112,6 +121,7 @@ export const stringClass = new class extends WaxClass {
 export const symbolClass = new WaxClass();
 
 export const jsFunctionClass = new class extends WaxClass {
+  displayName = "JsFunction";
   renderReact = thunkValueObject((jsValue: Function) => {
     const name = jsValue.name || "(anonymous)";
     return {value: `function ${name}()`, color: "purple" };

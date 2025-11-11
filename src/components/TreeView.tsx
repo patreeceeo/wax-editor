@@ -44,6 +44,7 @@ function Label({ value, label, isReference = true }: { value: any, label?: strin
   const entries = isReference ? getEntries(value) : [];
   const isArray = Array.isArray(value);
   const SummaryTagName = isReference && entries.length > 0 ? 'summary' : 'span';
+  const waxClass = WaxClass.forJsObject(value);
 
   return (
     (label !== undefined || isReference) && (
@@ -51,7 +52,7 @@ function Label({ value, label, isReference = true }: { value: any, label?: strin
       {label !== undefined && <WaxClassView value={label} waxClass={labelWaxClass} />}
       {isReference && (
         <span className="text-gray-400 ml-1">
-          ({entries.length}) {isArray ? `[…]` : `{…}`}
+          {waxClass.displayName}{isArray && `(${entries.length})`}
         </span>
       )}
       {!isReference && label !== undefined && (
