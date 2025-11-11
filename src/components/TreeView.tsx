@@ -6,13 +6,14 @@ interface TreeViewProps {
   value: any;
   label?: string | number;
   depth?: number;
+  inline?: boolean;
 }
 
 function WaxClassView({ value, waxClass }: { value: any, waxClass: WaxClass }) {
   return waxClass.renderReact(value);
 }
 
-export function TreeView({ value, label = "", depth = 0 }: TreeViewProps) {
+export function TreeView({ value, label, depth = 0, inline }: TreeViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const waxClass = WaxClass.forJsObject(value);
   const isValueClass = waxClass !== undefined && WaxClass.isValueClass(waxClass);
@@ -27,7 +28,7 @@ export function TreeView({ value, label = "", depth = 0 }: TreeViewProps) {
   const isEmpty = entries.length === 0;
   const ContainerTagName = isEmpty ? 'div' : 'details';
 
-  return <ContainerTagName onToggle={handleToggle} open={isExpanded} className="TreeView">
+  return <ContainerTagName onToggle={handleToggle} open={isExpanded} className={"TreeView" + (inline ? " inline-block" : "")}>
     {waxClass === undefined && (
       <>
         <Label value={value} label={label} />
@@ -49,7 +50,7 @@ function getEntries(value: any): [string | number, any][] {
   return isArray ? value.map((value, index) => [index, value]) : Object.entries(value);
 }
 
-function Label({ value, label = "", isReference = true }: { value: any, label: string | number, isReference?: boolean }) {
+function Label({ value, label, isReference = true }: { value: any, label?: string | number, isReference?: boolean }) {
   const labelWaxClass = WaxClass.forJsObject(label);
   invariant(labelWaxClass !== undefined, `WaxClass should be defined for label: ${String(label)}`);
   const entries = isReference ? getEntries(value) : [];
@@ -57,21 +58,21 @@ function Label({ value, label = "", isReference = true }: { value: any, label: s
   const SummaryTagName = isReference && entries.length > 0 ? 'summary' : 'span';
 
   return (
-    <SummaryTagName className="TreeView_summary">
-      <WaxClassView value={label} waxClass={labelWaxClass} />
+    (label !== undefined || isReference) && (
+      <SummaryTagName className="TreeView_summary">
+      {label !== undefined && <WaxClassView value={label} waxClass={labelWaxClass} />}
       {isReference && (
-        <>
-          <span className="text-gray-400 ml-1">
-            ({entries.length}) {isArray ? `[…]` : `{…}`}
-          </span>
-        </>
+        <span className="text-gray-400 ml-1">
+          ({entries.length}) {isArray ? `[…]` : `{…}`}
+        </span>
       )}
-      {!isReference && (
+      {!isReference && label !== undefined && (
         <span className="mx-1 text-gray-400">
           ➜
         </span>
       )}
-    </SummaryTagName>
+      </SummaryTagName>
+    )
   )
 }
 
