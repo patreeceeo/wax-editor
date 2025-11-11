@@ -66,9 +66,9 @@ Please evaluate the proposed changes using the following rubric.
 
 ## ✍️ Evaluator Notes
 
-- What questions did the contributor ask before implementing?  
-- How does this change improve the long-term health of the codebase?  
-- What tradeoffs were made, and are they documented or justified?  
+- What questions did the contributor ask before implementing?
+- How does this change improve the long-term health of the codebase?
+- What tradeoffs were made, and are they documented or justified?
 
 
 
