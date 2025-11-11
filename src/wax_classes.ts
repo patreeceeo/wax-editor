@@ -17,7 +17,7 @@ export class WaxClass {
       waxClass === stringClass ||
       waxClass === jsFunctionClass;
   }
-  static forJsObject(value: any): WaxClass | undefined {
+  static forJsObject(value: any): WaxClass {
     if (value === true) {
       return trueClass;
     }
@@ -44,6 +44,7 @@ export class WaxClass {
           return arrayClass;
         }
     }
+    return objectClass;
   }
 
   private _methods: {[key: string]: CompiledProcedure};
@@ -64,6 +65,8 @@ export class WaxClass {
     return {value: String(value), color: "gray" };
   }));
 }
+
+export const objectClass = new WaxClass();
 
 export const nilClass = new class extends WaxClass {
   renderReact = thunkValueObject((() => {

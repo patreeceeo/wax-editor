@@ -16,7 +16,7 @@ function WaxClassView({ value, waxClass }: { value: any, waxClass: WaxClass }) {
 export function TreeView({ value, label, depth = 0, inline }: TreeViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const waxClass = WaxClass.forJsObject(value);
-  const isValueClass = waxClass !== undefined && WaxClass.isValueClass(waxClass);
+  const isValueClass = WaxClass.isValueClass(waxClass);
 
   const handleToggle = useCallback((e: ToggleEvent<HTMLDetailsElement | HTMLDivElement>) => {
     e.stopPropagation();
@@ -52,7 +52,6 @@ function getEntries(value: any): [string | number, any][] {
 
 function Label({ value, label, isReference = true }: { value: any, label?: string | number, isReference?: boolean }) {
   const labelWaxClass = WaxClass.forJsObject(label);
-  invariant(labelWaxClass !== undefined, `WaxClass should be defined for label: ${String(label)}`);
   const entries = isReference ? getEntries(value) : [];
   const isArray = Array.isArray(value);
   const SummaryTagName = isReference && entries.length > 0 ? 'summary' : 'span';
