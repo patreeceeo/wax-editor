@@ -89,6 +89,8 @@ export class ProcedureContext {
   * context is used.
   */
   private _parentContextIndex: number = -1;
+
+  //@ts-expect-error
   private _methodSelector?: string;
 
   constructor({machine, procedure, parentContext, methodSelector}: ProcedureContextInit) {
