@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/wax-editor/', // GitHub Pages deployment path
   plugins: [
     tailwindcss(),
     react({

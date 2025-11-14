@@ -1,4 +1,8 @@
-# React + TypeScript + Vite
+# Wax Editor
+
+A virtual machine debugger built with React, TypeScript, and Vite.
+
+## Development
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
@@ -73,3 +77,46 @@ export default defineConfig([
   },
 ])
 ```
+
+
+## Deployment
+
+### GitHub Pages
+
+This project is configured to automatically deploy to GitHub Pages when pushed to the `main` branch. The deployment workflow:
+
+1. **Build Process**: Uses Vite to build the React application
+2. **Asset Optimization**: Generates production-optimized CSS and JavaScript bundles  
+3. **GitHub Pages Deploy**: Automatically publishes to `https://[username].github.io/wax-editor/`
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Tech Stack
+
+- **React 19** - UI framework with React Compiler enabled
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and dev server
+- **TailwindCSS** - Utility-first CSS framework
+- **Vitest** - Unit testing framework
+
+### Features
+
+- Virtual machine instruction debugging
+- Step-by-step execution control
+- Interactive variable and stack inspection
+- Recursive procedure call visualization
+- TypeScript-powered type safety
