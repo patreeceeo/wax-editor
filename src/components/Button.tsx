@@ -51,8 +51,6 @@ export default function Button({
         disabled:cursor-not-allowed
         disabled:translate-y-1
         ${sizeClasses[size]}
-        border
-        ${primary ? "border-blue-200" : "border-gray-200"}
       `}
     >
       {children}
