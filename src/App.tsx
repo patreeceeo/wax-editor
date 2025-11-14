@@ -3,6 +3,7 @@ import './App.css'
 import { Machine } from './machine';
 import Debugger from './components/Debugger';
 import {Compiler} from './compiler';
+import { preserveInstructions } from './function-registry';
 import {AssignmentStatementNode, ExpressionStatementNode, FunctionExpressionNode, GetVariableNode, JsLiteralNode, ProgramNode, SendMessageExpressionNode} from './abstract_syntax_tree';
 
 const isIndexLessThanArrayLengthAst = new FunctionExpressionNode({
@@ -109,6 +110,10 @@ function createInitialMachine(): Machine {
 
 function App() {
   const machine = useMemo(() => createInitialMachine(), []);
+
+  // Ensure instruction functions are preserved during minification
+  // This prevents the function registry from being tree-shaken
+  void preserveInstructions();
 
   return (
     <div className="p-4 space-y-4">
