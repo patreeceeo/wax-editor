@@ -5,6 +5,7 @@ import JsonDiff from './JsonDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
 import Button from './Button';
 import ProgramViewer from './ProgramViewer';
+import {TreeView} from './TreeView';
 
 interface DebuggerProps {
   machine: Machine;
@@ -128,7 +129,7 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
   const ctx = machines[machineIndex].currentProcedureContext()!.toJSON();
   const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext()!.toJSON() : undefined;
 
-  const program = machines[0].readMemory("main")!;
+  const program = machines[machineIndex].currentProcedure()!;
 
   const clickReset = useCallback(() => dispatch({ type: 'RESET', machine: initialMachine }), [initialMachine]);
 
@@ -139,7 +140,7 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
   const clickRunToEnd = useCallback(() => dispatch({ type: 'RUN_TO_END' }), []);
 
   return (
-    <>
+    <MachineProvider machine={machines[machineIndex]} previousMachine={machineIndex < machines.length - 1 ? machines[machineIndex + 1] : undefined}>
       <div className="space-x-4">
         <Button size="xl" onClick={clickReset} disabled={machineIndex === machines.length - 1}>
           <RewindIcon size="xl" />
@@ -155,33 +156,32 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
         </Button>
       </div>
       <h3>Step Count: {stepCount}</h3>
-      <MachineProvider machine={machines[0]}>
-        <div className="flex space-x-4">
-          <div>
-            <h2>Instructions</h2>
-            <ProgramViewer program={program} lastPc={previousCtx?.pc ?? 0}/>
-          </div>
-          <div className="flex-1 space-y-4">
-            <h2>State</h2>
-            <div className="flex space-x-4">
-              <div>
-                <h3 className="mt-0">Variables</h3>
-                <JsonDiff
-                  currentContext={ctx.variables}
-                  previousContext={previousCtx ? previousCtx['variables'] : undefined}
-                />
-              </div>
-              <div>
-                <h3 className="mt-0">Stack</h3>
-                <JsonDiff
-                  currentContext={ctx.stack}
-                  previousContext={previousCtx ? previousCtx['stack'] : undefined}
-                />
-              </div>
+      <div className="flex space-x-4">
+        <div>
+          <h2>Instructions</h2>
+          <ProgramViewer value={program} />
+        </div>
+        <div className="flex-1 space-y-4">
+          <h2>State</h2>
+          <div className="flex space-x-4">
+            <div>
+              <h3 className="mt-0">Variables</h3>
+              <JsonDiff
+                currentContext={ctx.variables}
+                previousContext={previousCtx ? previousCtx['variables'] : undefined}
+              />
+            </div>
+            <div>
+              <h3 className="mt-0">Stack</h3>
+              <JsonDiff
+                currentContext={ctx.stack}
+                previousContext={previousCtx ? previousCtx['stack'] : undefined}
+              />
             </div>
           </div>
         </div>
-      </MachineProvider>
-    </>
+      </div>
+      <TreeView value={machines[machineIndex]} label='machine'/>
+    </MachineProvider>
   )
 }

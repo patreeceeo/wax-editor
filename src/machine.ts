@@ -2,15 +2,28 @@ import {Memory} from "./memory";
 import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type CompiledProcedure} from "./compiled_procedure";
 import {PersistentObject} from "./persistent_object";
 import {invariant} from "./error";
+import {WaxClass} from "./wax_classes";
+import {Variable} from "./variable";
 
 export class Machine extends PersistentObject {
   private _stack: ProcedureContext[] = [];
   private _memory = new Memory<CompiledInstructionArg>();
+  private _running = false;
 
   start() {
+    this._stack = [];
     const main = this._memory.get("main");
     invariant(main !== undefined, "No 'main' procedure loaded in machine memory.");
-    this.invokeProcedure(main);
+    this.invokeProcedure(main, []);
+    this._running = true;
+  }
+
+  halt() {
+    this._running = false;
+  }
+
+  isRunning() {
+    return this._running;
   }
 
   loadMemory(key: string, proc: CompiledProcedure) {
@@ -21,15 +34,39 @@ export class Machine extends PersistentObject {
     return this._memory.get(key);
   }
 
-  invokeProcedure(procedure: CompiledProcedure) {
-    const newCtx = new ProcedureContext({machine: this, procedure});
+  _getParentContextForProcedure(procedure: CompiledProcedure): ProcedureContext | undefined {
+    if(procedure.parentProcedure === undefined) {
+      return undefined;
+    }
+    // Walk backwards through the stack to find the nearest context whose procedure is the parent of the given procedure
+    for (const ctx of this._stack) {
+      if (ctx.procedure.id === procedure.parentProcedure.id) {
+        return ctx;
+      }
+    }
+    throw new Error("No parent context found for procedure.");
+  }
+
+  invokeMethod(receiver: CompiledInstructionArg, methodSelector: string, args: CompiledInstructionArg[]) {
+    const receiverClass = WaxClass.forJsObject(receiver);
+    invariant(receiverClass !== undefined, `Receiver of message '${methodSelector}' does not have a WaxClass.`);
+    const method = receiverClass.lookupMethod(methodSelector);
+    invariant(method !== undefined, `Method '${methodSelector}' not found on receiver's class.`);
+    this.invokeProcedure(method, [...args, receiver], methodSelector);
+  }
+
+  invokeProcedure(procedure: CompiledProcedure, args: CompiledInstructionArg[] = [], methodSelector?: string) {
+    const newCtx = new ProcedureContext({machine: this, procedure, parentContext: this._getParentContextForProcedure(procedure), methodSelector});
     this._stack.unshift(newCtx);
+    for (const arg of args) {
+      newCtx.push(arg);
+    }
   }
 
   returnFromProcedure() {
     invariant(this._stack.length > 1, "Machine stack underflow: no procedure context to return to.");
-    const poppedCtx = this._stack.pop()!;
-    const currentCtx = this._stack[0]!;
+    const poppedCtx = this._stack.shift()!;
+    const currentCtx = this.currentProcedureContext()!;
     currentCtx.acceptReturnValues(poppedCtx)
   }
 
@@ -46,10 +83,14 @@ export class Machine extends PersistentObject {
   }
 
   getInstruction() {
+    if(!this._running) {
+      return;
+    }
     const ctx = this.currentProcedureContext();
     const procedure = this.currentProcedure();
     invariant(ctx !== undefined, "No current procedure context to get instruction from.");
     invariant(procedure !== null, "No current procedure to get instruction from.");
+    invariant(ctx.pc < procedure.length, "Program counter out of bounds of current procedure.");
     return procedure.at(ctx.pc);
   }
 
@@ -66,6 +107,21 @@ export class Machine extends PersistentObject {
     for (const ctx of this._stack) {
       ctx._setMachine(this);
     }
+  }
+
+  private _nextVariableId = 0;
+  createVariable(): Variable {
+    const variable = new Variable({id: this._nextVariableId++, value: undefined});
+    return variable;
+  }
+
+  indexOfProcedureContext(context: ProcedureContext): number {
+    return this._stack.indexOf(context);
+  }
+
+  getProcedureContextAtIndex(index: number): ProcedureContext | undefined {
+    invariant(index < this._stack.length, `No procedure context at index ${index}.`);
+    return index >= 0 ? this._stack.at(-index) : undefined;
   }
 }
 

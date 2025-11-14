@@ -1,5 +1,6 @@
 import {useCallback, useState, type ToggleEvent} from "react";
 import {jsObjectClass, WaxClass} from "../wax_classes";
+import {isObjectOrArray} from "../utils";
 
 interface TreeViewProps {
   value: any;
@@ -21,8 +22,7 @@ export function TreeView({ value, label, inline }: TreeViewProps) {
     setIsExpanded(!isExpanded);
   }, [isExpanded, setIsExpanded]);
 
-  const isObject = typeof value === "object" && value !== null;
-  const entries = isObject ? getEntries(value) : [];
+  const entries = isObjectOrArray(value) ? getEntries(value) : [];
   const isEmpty = entries.length === 0;
   const ContainerTagName = isEmpty ? 'div' : 'details';
 
@@ -56,9 +56,7 @@ function Label({ value, label, isReference = true }: { value: any, label?: strin
         </span>
       )}
       {!isReference && label !== undefined && (
-        <span className="mx-1 text-gray-400">
-          ➜
-        </span>
+        <span className="mx-1 text-gray-400">➜</span>
       )}
       </SummaryTagName>
     )

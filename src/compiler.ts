@@ -1,6 +1,7 @@
 import type {AstNode} from "./abstract_syntax_tree";
-import {literal as literalInstruction, pushReturnValue, returnFromProcedure, setVariable, sendMessage as sendMessageInstruction, getVariable as getVariableInstruction} from "./compiled_instructions";
+import {literal as literalInstruction, pushReturnValue, returnFromProcedure, setVariable, sendMessage as sendMessageInstruction, getVariable as getVariableInstruction, halt as haltInstruction} from "./compiled_instructions";
 import {CompiledProcedure, type CompiledInstruction, type InstructionFn} from "./compiled_procedure";
+import {invariant} from "./error";
 import type {Machine} from "./machine";
 
 interface CompilerInit {
@@ -9,7 +10,7 @@ interface CompilerInit {
 
 export class Compiler {
   static emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args): CompiledInstruction<Args> {
-    return {fn, args};
+    return {name: fn.name, fn, args};
   }
 
   static plan<Args extends any[]>(fn: CompilerStepFn<Args>, ...args: Args): CompilerStep<Args> {
@@ -23,17 +24,30 @@ export class Compiler {
     this._machine = machine;
   }
 
+  private _topProcedure: CompiledProcedure | undefined;
+  private _nextProcedureId = 0;
+
   pushProcedure() {
-    return this._procedureStack.push(new CompiledProcedure());
+    const id = this._nextProcedureId++;
+    const child = new CompiledProcedure({id, parentProcedure: this._topProcedure});
+    this._procedureStack.push(child);
+    this._topProcedure = child;
   }
 
-  popProcedure() {
-    return this._procedureStack.pop();
+  popProcedure(): CompiledProcedure {
+    const popped = this._procedureStack.pop();
+    this._topProcedure = this._procedureStack[this._procedureStack.length - 1];
+    invariant(popped !== undefined, "Procedure stack underflow: no procedure to pop.");
+    return popped;
+  }
+
+  get currentProcedure(): CompiledProcedure | undefined {
+    return this._topProcedure;
   }
 
   append(...instructions: CompiledInstruction[]) {
-    const currentProcedure = this._procedureStack[this._procedureStack.length - 1];
-    currentProcedure.append(...instructions);
+    invariant(this._topProcedure !== undefined, "Cannot append instructions without an active procedure");
+    this._topProcedure.append(...instructions);
   }
 
   compile(astNode: AstNode) {
@@ -74,6 +88,12 @@ export const enterProecedure: CompilerStepFn = (compiler: Compiler) => {
   compiler.pushProcedure();
 }
 export const exitProcedure: CompilerStepFn = (compiler: Compiler) => {
+  // Append implicit return if needed
+  if(compiler.currentProcedure!.at(-1)?.fn !== returnFromProcedure) {
+    compiler.append(
+      Compiler.emit(returnFromProcedure)
+    )
+  }
   const procedure = compiler.popProcedure();
   compiler.append(
     Compiler.emit(literalInstruction, procedure)
@@ -87,6 +107,11 @@ export const sendMessage: CompilerStepFn<[string, number]> = (compiler: Compiler
 export const getVariable: CompilerStepFn<[string]> = (compiler: Compiler, variableName: string) => {
   compiler.append(
     Compiler.emit(getVariableInstruction, variableName),
+  )
+}
+export const halt: CompilerStepFn = (compiler: Compiler) => {
+  compiler.append(
+    Compiler.emit(haltInstruction)
   )
 }
 

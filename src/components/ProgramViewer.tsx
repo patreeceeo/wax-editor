@@ -1,9 +1,10 @@
 import { CompiledProcedure, type CompiledInstruction } from '../compiled_procedure';
 import { useMachine } from './MachineContext';
+import {TreeView} from './TreeView';
+import cx from "classnames";
 
 interface ProgramViewerProps {
-  program: CompiledProcedure;
-  lastPc: number;
+  value: CompiledProcedure;
 }
 
 // Helper function to format line numbers with leading zeros
@@ -12,34 +13,34 @@ const formatLineNumber = (lineNumber: number, totalDigits: number) => {
 };
 
 export default function ProgramViewer({
-  program,
-  lastPc
+  value: program,
 }: ProgramViewerProps) {
   return (
-    <pre className="program-viewer px-0">
-      <Procedure procedure={program} lastPc={lastPc} />
+    <pre className="ProgramViewer">
+      <ProcedureViewer value={program} />
     </pre>
   )
 }
 
-function Procedure({
-  procedure,
-  lastPc
-}: { procedure: CompiledProcedure; lastPc: number}) {
-  const totalDigits = procedure.length > 0 ? Math.floor(Math.log10(procedure.length)) + 1 : 1;
-  const { machine } = useMachine();
+export function ProcedureViewer({
+  value,
+}: { value: CompiledProcedure}) {
+  const totalDigits = value.length > 0 ? Math.floor(Math.log10(value.length)) + 1 : 1;
+  const { machine, previousMachine } = useMachine();
   const pc = machine.currentProcedureContext()?.pc ?? 0;
-  const isCurrent = machine.currentProcedure() === procedure;
+  const lastPc = previousMachine?.currentProcedureContext()?.pc ?? -1;
+  const inCurrentProcedure = machine.currentProcedure() === value;
 
   return <>
-    {procedure.map((instruction, index) => (
+    <b>id: {value.id}</b>
+    {value.map((instruction, index) => (
       <Instruction
         key={index}
         instruction={instruction}
         lineNumber={index}
         totalDigits={totalDigits}
-        isCurrent={isCurrent && index === pc}
-        isPrevious={index === lastPc}
+        isCurrent={inCurrentProcedure && index === pc}
+        isPrevious={inCurrentProcedure && index === lastPc}
       />
     ))}
   </>
@@ -49,61 +50,28 @@ function Instruction({instruction, lineNumber, totalDigits, isCurrent, isPreviou
   const formattedLineNumber = formatLineNumber(lineNumber, totalDigits);
 
   return (
-    <div key={lineNumber} className={`px-3 ${isCurrent ? 'bg-yellow-300 font-bold text-black' : isPrevious ? 'bg-red-400 text-black font-bold' :  ''}`}>
-      <span className={`text-right mr-3 ${isPrevious ? 'text-gray-600' : 'text-gray-500'} select-none`}>
+    <div key={lineNumber} className={cx(`flex px-3`, {'bg-gray-600': isCurrent, 'bg-gray-700': isPrevious})}>
+      <span className={`text-right mr-3 select-none`}>
         {formattedLineNumber}
       </span>
-      <span>
-        {instruction.fn.name} {instruction.args.map((arg, index) => <span key={index}><InstructionArg arg={arg} /> </span>)}
-      </span>
+      {isCurrent ? (
+        <span className="text-green-300 mr-2">↪</span>
+      ) : isPrevious ? (
+        <span className="text-green-700 mr-2" style={{transform: "rotate(90deg)"}}>➜</span>
+      ) : (
+        <span className="mr-2">&nbsp;</span>
+      )}
+      <div className="inline">
+        {instruction.name}
+      </div>
+      <div className="inline ml-2">
+      {instruction.args.map((arg, index) => <div className="inline" key={index}><InstructionArg arg={arg} /> </div>)}
+      </div>
     </div>
   );
 }
 
 
 function InstructionArg({ arg }: { arg: any }) {
-  if (typeof arg === 'string') {
-    return <span className="text-green-600">"{arg}"</span>;
-  } else if (typeof arg === 'number') {
-    return <span className="text-blue-600">{arg}</span>;
-  } else if (typeof arg === 'boolean') {
-    return <span className="text-purple-600">{String(arg)}</span>;
-  } else if (arg === null) {
-    return <span className="text-gray-600">null</span>;
-  } else if (arg === undefined) {
-    return <span className="text-gray-600">undefined</span>;
-  } else if (Array.isArray(arg)) {
-    return (
-      <span>
-        [
-        {arg.map((item, index) => {
-          return (
-            <span key={index}>
-              <InstructionArg arg={item} />
-              {index < arg.length - 1 ? ', ' : ''}
-            </span>
-          )
-        })}
-        ]
-      </span>
-    );
-  } else if (typeof arg === 'object') {
-    if(CompiledProcedure.isInstance(arg)) {
-      return <Procedure procedure={arg} lastPc={-1} />;
-    }
-    return (
-      <span>
-        {'{'}
-        {Object.entries(arg).map(([key, value], index, array) => (
-          <span key={key}>
-            <span className="text-red-600">{key}</span>: <InstructionArg arg={value} />
-            {index < array.length - 1 ? ', ' : ''}
-          </span>
-        ))}
-        {'}'}
-      </span>
-    );
-  } else {
-    return <span>{String(arg)}</span>;
-  }
+  return <TreeView value={arg} inline />;
 }

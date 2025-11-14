@@ -6,6 +6,7 @@ import {Compiler} from "../compiler";
 import {CompiledProcedure} from "../compiled_procedure";
 
 const program = new CompiledProcedure({
+  id: "test",
   instructions: [
     Compiler.emit(literal, 1),
     Compiler.emit(literal, 2),

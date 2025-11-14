@@ -1,4 +1,4 @@
-import {assignmentStatement, literal, returnStatement, type CompilerStep, enterProecedure, exitProcedure, getVariable, sendMessage, Compiler} from "./compiler";
+import {assignmentStatement, literal, returnStatement, type CompilerStep, enterProecedure, exitProcedure, getVariable, sendMessage, Compiler, halt} from "./compiler";
 
 export abstract class AstNode {
   /** Get a discrete list of compiler steps to compile this AST node **/
@@ -22,6 +22,7 @@ export class ProgramNode extends AstNode {
     for(const node of this.body) {
       steps = steps.concat(node.getSteps());
     }
+    steps.push(Compiler.plan(halt));
     return steps;
   }
 }

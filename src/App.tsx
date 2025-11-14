@@ -3,83 +3,70 @@ import './App.css'
 import { Machine } from './machine';
 import Debugger from './components/Debugger';
 import {Compiler} from './compiler';
-import {AssignmentStatementNode, FunctionExpressionNode, GetVariableNode, JsLiteralNode, ProgramNode, SendMessageExpressionNode} from './abstract_syntax_tree';
+import {AssignmentStatementNode, ExpressionStatementNode, FunctionExpressionNode, GetVariableNode, JsLiteralNode, ProgramNode, SendMessageExpressionNode} from './abstract_syntax_tree';
 
 const isIndexLessThanArrayLengthAst = new FunctionExpressionNode({
   params: [],
   body: [
-    new SendMessageExpressionNode({
-      receiver: new SendMessageExpressionNode({
-        receiver: new GetVariableNode({name: 'array'}),
-        message: 'length',
-        args: []
+    new ExpressionStatementNode({
+      value: new SendMessageExpressionNode({
+        receiver: new GetVariableNode({name: 'i'}),
+        message: '<',
+        args: [
+          new SendMessageExpressionNode({
+            receiver: new GetVariableNode({name: 'array'}),
+            message: 'length',
+            args: []
+          })
+        ]
       }),
-      message: '>',
-      args: [
-        new GetVariableNode({name: 'i'})
-      ]
+      isReturn: true
     })
   ]
 });
 
-const getCurrentElementAst = new ProgramNode({
-  body: [
-    new SendMessageExpressionNode({
-      receiver: new GetVariableNode({name: 'array'}),
-      message: 'at:',
-      args: [
-        new GetVariableNode({name: 'i'})
-      ]
-    })
+const getCurrentElementAst = new SendMessageExpressionNode({
+  receiver: new GetVariableNode({name: 'array'}),
+  message: 'at:',
+  args: [
+    new GetVariableNode({name: 'i'})
   ]
-});
+})
 
-const isCurrentGreaterThanMaxAst = new ProgramNode({
-  body: [
-    new SendMessageExpressionNode({
-      receiver: getCurrentElementAst,
-      message: '>',
-      args: [
-        new GetVariableNode({name: 'max'}),
-      ]
-    })
+const isCurrentGreaterThanMaxAst = new SendMessageExpressionNode({
+  receiver: getCurrentElementAst,
+  message: '>',
+  args: [
+    new GetVariableNode({name: 'max'}),
   ]
-});
+})
 
-const maybeUpdateMaxAst = new ProgramNode({
-  body: [
-    new SendMessageExpressionNode({
-      receiver: isCurrentGreaterThanMaxAst,
-      message: 'ifTrue',
-      args: [
-        new FunctionExpressionNode({
-          params: [],
-          body: [
-            new AssignmentStatementNode({
-              variableName: 'max',
-              valueExpression: getCurrentElementAst
-            })
-          ]
+const maybeUpdateMaxAst = new SendMessageExpressionNode({
+  receiver: isCurrentGreaterThanMaxAst,
+  message: 'ifTrue',
+  args: [
+    new FunctionExpressionNode({
+      params: [],
+      body: [
+        new AssignmentStatementNode({
+          variableName: 'max',
+          valueExpression: getCurrentElementAst
         })
       ]
     })
   ]
-});
+})
 
 
-const incrementIndexAst = new ProgramNode({
-  body: [
-    new AssignmentStatementNode({
-      variableName: 'i',
-      valueExpression: new SendMessageExpressionNode({
-        receiver: new GetVariableNode({name: 'i'}),
-        message: '+',
-        args: [
-          new JsLiteralNode({value: 1})
-        ]
-      }),
-    })
-  ]
+const incrementIndexAst = new AssignmentStatementNode({
+  variableName: 'i',
+  valueExpression: new SendMessageExpressionNode({
+    receiver: new GetVariableNode({name: 'i'}),
+    message: '+',
+    args: [
+      new JsLiteralNode({value: 1})
+    ]
+  }),
 })
 
 const findMaxProgramAst = new ProgramNode({
@@ -111,7 +98,6 @@ const findMaxProgramAst = new ProgramNode({
     })
   ]
 });
-
 
 function createInitialMachine(): Machine {
   const machine = new Machine();
