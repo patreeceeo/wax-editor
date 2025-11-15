@@ -13,13 +13,4 @@ export default defineConfig({
       },
     }),
   ],
-  build: {
-    minify: 'terser',
-    terserOptions: {
-      mangle: {
-        // Preserve function names for VM instruction debugging
-        keep_fnames: true,
-      },
-    }
-  }
 })

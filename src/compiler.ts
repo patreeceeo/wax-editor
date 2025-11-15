@@ -10,7 +10,7 @@ interface CompilerInit {
 
 export class Compiler {
   static emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args): CompiledInstruction<Args> {
-    return {name: fn.name, fn, args};
+    return {name: fn.displayName, fn, args};
   }
 
   static plan<Args extends any[]>(fn: CompilerStepFn<Args>, ...args: Args): CompilerStep<Args> {

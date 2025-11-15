@@ -52,6 +52,8 @@ export type CompiledInstructionArg = any;
 
 export interface InstructionFn<Args extends any[] = any[]> {
   (ctx: ProcedureContext, ...args: Args): true | void;
+  // `function.name` is readonly and will get minified, hence a custom property
+  displayName: string;
 }
 
 export interface CompiledInstruction<Args extends any[] = any[]> {
