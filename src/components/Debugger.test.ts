@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, test} from "vitest";
 import {Machine} from "../machine";
 import {_getInitialState, _reducer} from "./Debugger";
-import {literal, add} from "../compiled_instructions";
+import {literal, add, halt} from "../compiled_instructions";
 import {Compiler} from "../compiler";
 import {CompiledProcedure} from "../compiled_procedure";
 
@@ -10,7 +10,8 @@ const program = new CompiledProcedure({
   instructions: [
     Compiler.emit(literal, 1),
     Compiler.emit(literal, 2),
-    Compiler.emit(add)
+    Compiler.emit(add),
+    Compiler.emit(halt)
   ]
 });
 
@@ -35,9 +36,9 @@ describe("Debugger actions", () => {
 
     test("run to end", () => {
       const next = _reducer(_state, { type: "RUN_TO_END" });
-      expect(next.machines).toHaveLength(4);
+      expect(next.machines).toHaveLength(5);
       expect(next.machineIndex).toBe(0);
-      expect(next.stepCount).toBe(3);
+      expect(next.stepCount).toBe(4);
       expect(next.isMore).toBe(false);
     });
   });
@@ -64,9 +65,9 @@ describe("Debugger actions", () => {
 
     test("run to end", () => {
       const next = _reducer(_state, { type: "RUN_TO_END" });
-      expect(next.machines).toHaveLength(4);
+      expect(next.machines).toHaveLength(5);
       expect(next.machineIndex).toBe(0);
-      expect(next.stepCount).toBe(3);
+      expect(next.stepCount).toBe(4);
       expect(next.isMore).toBe(false);
     });
 
@@ -89,7 +90,7 @@ describe("Debugger actions", () => {
     test("step back", () => {
       const next = _reducer(_state, { type: "PREV" });
       expect(next.machineIndex).toBe(1);
-      expect(next.stepCount).toBe(2);
+      expect(next.stepCount).toBe(3);
       expect(next.isMore).toBe(true);
     });
 
@@ -104,9 +105,9 @@ describe("Debugger actions", () => {
     test("step back then run to end again", () => {
       const prev = _reducer(_state, { type: "PREV" });
       const next = _reducer(prev, { type: "RUN_TO_END" });
-      expect(next.machines).toHaveLength(4);
+      expect(next.machines).toHaveLength(5);
       expect(next.machineIndex).toBe(0);
-      expect(next.stepCount).toBe(3);
+      expect(next.stepCount).toBe(4);
       expect(next.isMore).toBe(false);
     });
   });
