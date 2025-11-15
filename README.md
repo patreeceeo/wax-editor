@@ -2,7 +2,7 @@
 
 Wax Editor is, at the moment, an AST compiler and virtual machine with debugging support built with React, TypeScript, and Vite. It implements a stack-based virtual machine with time-travel debugging capabilities, allowing developers to step through instruction execution and inspect machine state at each point.
 
-The goal is to build a low-code, visual scripting environment like Scratch, if Scratch were made for serious software development. The underlying semantics of the language will be object oriented a la Smalltalk, though the average user will not need to have any clue what that even is. This editor will be powerful because:
+The goal is to build a low-code, visual scripting environment like Scratch, if Scratch were made for serious software development. The underlying semantics of the language will be message passing object-orientation, a la Smalltalk, though the average user will not need to have any clue what that even is. This editor will be powerful because:
 
 * Users will have powerful debugging features built in to the editor.
 * The editor will evaluate code as it's updated, removing the need for static type checks and allowing for lighting fast feedback.
