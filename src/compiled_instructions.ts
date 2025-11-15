@@ -1,55 +1,79 @@
-import {ProcedureContext, type CompiledInstructionArg} from "./compiled_procedure";
+import {type CompiledInstructionArg, type InstructionFn} from "./compiled_procedure";
 import {invariant} from "./error";
 
-// TODO convert to const function expressions
+// Convert all instruction functions to function expressions with explicit names
+// This ensures function names are preserved during minification
 
 /** Context manipulation instructions **/
-export function literal(ctx: ProcedureContext, obj: CompiledInstructionArg) {
+export const literal: InstructionFn<[CompiledInstructionArg]> = (ctx, obj) => {
   ctx.push(obj);
-}
-export function pop(ctx: ProcedureContext) {
+};
+literal.displayName = "literal";
+
+export const pop: InstructionFn<[]> = (ctx) => {
   ctx.pop();
-}
-export function getProperty(ctx: ProcedureContext) {
+};
+pop.displayName = "pop";
+
+export const getProperty: InstructionFn<[]> = (ctx) => {
   const property = ctx.pop();
   const object = ctx.pop();
   ctx.push(object[property]);
-}
-export function getPropertyAtLiteral(ctx: ProcedureContext, key: string | number) {
+};
+getProperty.displayName = "getProperty";
+
+export const getPropertyAtLiteral: InstructionFn<[string | number]> = (ctx, key) => {
   const obj = ctx.pop();
   ctx.push(obj[key]);
-}
-export function setVariable(ctx: ProcedureContext, name: string) {
+};
+getPropertyAtLiteral.displayName = "getPropertyAtLiteral";
+
+export const setVariable: InstructionFn<[string]> = (ctx, name) => {
   ctx.set(name, ctx.pop());
-}
-export function setVariableToLiteral(ctx: ProcedureContext, name: string, value: CompiledInstructionArg) {
+};
+setVariable.displayName = "setVariable";
+
+export const setVariableToLiteral: InstructionFn<[string, CompiledInstructionArg]> = (ctx, name, value) => {
   ctx.set(name, value);
-}
-export function getVariable(ctx: ProcedureContext, name: string) {
+};
+setVariableToLiteral.displayName = "setVariableToLiteral";
+
+export const getVariable: InstructionFn<[string]> = (ctx, name) => {
   ctx.push(ctx.get(name));
-}
-export function pushReturnValue(ctx: ProcedureContext) {
+};
+getVariable.displayName = "getVariable";
+
+export const pushReturnValue: InstructionFn<[]> = (ctx) => {
   ctx.pushReturnValue(ctx.pop());
-}
+};
+pushReturnValue.displayName = "pushReturnValue";
 
 /** Control flow instructions **/
-export function returnFromProcedure(ctx: ProcedureContext) {
+export const returnFromProcedure: InstructionFn<[]> = (ctx) => {
   ctx.machine.returnFromProcedure();
-}
-export function jump(ctx: ProcedureContext, deltaPc: number) {
+};
+returnFromProcedure.displayName = "returnFromProcedure";
+
+export const jump: InstructionFn<[number]> = (ctx, deltaPc) => {
   ctx.pc += deltaPc;
-}
-export function jumpIfTrue(ctx: ProcedureContext, deltaPc: number) {
+};
+jump.displayName = "jump";
+
+export const jumpIfTrue: InstructionFn<[number]> = (ctx, deltaPc) => {
   if (ctx.pop()) {
     ctx.pc += deltaPc;
   }
-}
-export function jumpIfFalse(ctx: ProcedureContext, deltaPc: number) {
+};
+jumpIfTrue.displayName = "jumpIfTrue";
+
+export const jumpIfFalse: InstructionFn<[number]> = (ctx, deltaPc) => {
   if (!ctx.pop()) {
     ctx.pc += deltaPc;
   }
-}
-export function sendMessage(ctx: ProcedureContext, message: string, argCount: number) {
+};
+jumpIfFalse.displayName = "jumpIfFalse";
+
+export const sendMessage: InstructionFn<[string, number]> = (ctx, message, argCount) => {
   invariant(argCount <= ctx.stackSize - 1, `Argument count mismatch when sending message '${message}': expected ${argCount}, got ${ctx.stackSize - 1}.`);
   const args: CompiledInstructionArg[] = [];
   for (let i = 0; i < argCount; i++) {
@@ -57,47 +81,60 @@ export function sendMessage(ctx: ProcedureContext, message: string, argCount: nu
   }
   const receiver = ctx.pop();
   ctx.machine.invokeMethod(receiver, message, args);
-}
-export function invokeProcedure(ctx: ProcedureContext) {
+};
+sendMessage.displayName = "sendMessage";
+
+export const invokeProcedure: InstructionFn<[]> = (ctx) => {
   const procedure = ctx.pop();
   ctx.machine.invokeProcedure(procedure);
-}
-export function halt(ctx: ProcedureContext) {
+};
+invokeProcedure.displayName = "invokeProcedure";
+
+export const halt: InstructionFn<[]> = (ctx) => {
   ctx.machine.halt();
-}
+};
+halt.displayName = "halt";
 
 /** Number instructions **/
-export function greaterThan(ctx: ProcedureContext) {
+export const greaterThan: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
   ctx.push(a > b);
-}
-export function lessThan(ctx: ProcedureContext) {
+};
+greaterThan.displayName = "greaterThan";
+
+export const lessThan: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
   ctx.push(a < b);
-}
-export function add(ctx: ProcedureContext) {
+};
+lessThan.displayName = "lessThan";
+
+export const add: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
   ctx.push(a + b);
-}
+};
+add.displayName = "add";
 
 /** Boolean instructions **/
-export function and(ctx: ProcedureContext) {
+export const and: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
   ctx.push(a && b);
-}
+};
+and.displayName = "and";
 
 /** JS Object instructions **/
-export function getJsObjectPropertyForLiteral(ctx: ProcedureContext, key: string | number) {
+export const getJsObjectPropertyForLiteral: InstructionFn<[string | number]> = (ctx, key) => {
   const obj = ctx.pop();
   ctx.push(obj[key]);
-}
-export function getJsObjectProperty(ctx: ProcedureContext) {
+};
+getJsObjectPropertyForLiteral.displayName = "getJsObjectPropertyForLiteral";
+
+export const getJsObjectProperty: InstructionFn<[]> = (ctx) => {
   const obj = ctx.pop();
   const key = ctx.pop();
   ctx.push(obj[key]);
-}
-
+};
+getJsObjectProperty.displayName = "getJsObjectProperty";
