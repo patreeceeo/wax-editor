@@ -9,6 +9,7 @@ The goal is to build a low-code, visual scripting environment like Scratch, if S
 * The VM's stack will be a first class object, allowing for things like algebraic effects instead of exceptions/errors.
 * There will be a dev preview of the relevant parts of the app alongside of / mixed in with the code editor.
 * It will leverage the human brain's visual as well as verbal processing abilities.
+* It seeks to compliment JavaScript, not replace it.
 
 ## Development
 
