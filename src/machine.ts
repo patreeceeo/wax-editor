@@ -123,5 +123,28 @@ export class Machine extends PersistentObject {
     invariant(index < this._stack.length, `No procedure context at index ${index}.`);
     return index >= 0 ? this._stack.at(-index) : undefined;
   }
+
+  getCallStack(): (string | number)[] {
+    return this._stack.map(ctx => ctx.procedure.id);
+  }
+
+  getStackDepth(): number {
+    return this._stack.length;
+  }
+
+  isAtEndOfProcedure(): boolean {
+    const ctx = this.currentProcedureContext();
+    const procedure = this.currentProcedure();
+    if (!ctx || !procedure) return true;
+    return ctx.pc >= procedure.length;
+  }
+
+  canReturnFromProcedure(): boolean {
+    return this._stack.length > 1;
+  }
+
+  getVariableCount(): number {
+    return this._nextVariableId;
+  }
 }
 
