@@ -1,9 +1,10 @@
 import {Memory} from "./memory";
-import {ProcedureContext, type CompiledInstruction, type CompiledInstructionArg, type CompiledProcedure} from "./compiled_procedure";
+import {type CompiledInstruction, type CompiledInstructionArg, type CompiledProcedure} from "./compiled_procedure";
 import {PersistentObject} from "./persistent_object";
 import {invariant} from "./error";
 import {WaxClass} from "./wax_classes";
 import {Variable} from "./variable";
+import {ProcedureContext} from "./procedure_context";
 
 export class Machine extends PersistentObject {
   private _stack: ProcedureContext[] = [];
