@@ -1,5 +1,6 @@
 import {type CompiledInstructionArg, type InstructionFn} from "./compiled_procedure";
 import {invariant} from "./error";
+import { isString, isNumber, isBoolean, getTypeName, isObjectOrArray } from "./utils";
 
 // Convert all instruction functions to function expressions with explicit names
 // This ensures function names are preserved during minification
@@ -14,19 +15,6 @@ export const pop: InstructionFn<[]> = (ctx) => {
   ctx.pop();
 };
 pop.displayName = "pop";
-
-export const getProperty: InstructionFn<[]> = (ctx) => {
-  const property = ctx.pop();
-  const object = ctx.pop();
-  ctx.push(object[property]);
-};
-getProperty.displayName = "getProperty";
-
-export const getPropertyAtLiteral: InstructionFn<[string | number]> = (ctx, key) => {
-  const obj = ctx.pop();
-  ctx.push(obj[key]);
-};
-getPropertyAtLiteral.displayName = "getPropertyAtLiteral";
 
 export const setVariable: InstructionFn<[string]> = (ctx, name) => {
   ctx.set(name, ctx.pop());
@@ -55,20 +43,33 @@ export const returnFromProcedure: InstructionFn<[]> = (ctx) => {
 returnFromProcedure.displayName = "returnFromProcedure";
 
 export const jump: InstructionFn<[number]> = (ctx, deltaPc) => {
-  ctx.pc += deltaPc;
+  const newPc = ctx.pc + deltaPc;
+  invariant(newPc >= 0, `Invalid jump target: ${newPc} is negative`);
+  invariant(newPc <= ctx.maxPc, `Invalid jump target: ${newPc} exceeds max PC of ${ctx.maxPc}`);
+  ctx.pc = newPc;
 };
 jump.displayName = "jump";
 
 export const jumpIfTrue: InstructionFn<[number]> = (ctx, deltaPc) => {
-  if (ctx.pop()) {
-    ctx.pc += deltaPc;
+  const value = ctx.pop();
+  invariant(isBoolean(value), `jumpIfTrue expects boolean value, got ${typeof value}`);
+  if (value) {
+    const newPc = ctx.pc + deltaPc;
+    invariant(newPc >= 0, `Invalid jump target: ${newPc} is negative`);
+    invariant(newPc <= ctx.maxPc, `Invalid jump target: ${newPc} exceeds max PC of ${ctx.maxPc}`);
+    ctx.pc = newPc;
   }
 };
 jumpIfTrue.displayName = "jumpIfTrue";
 
 export const jumpIfFalse: InstructionFn<[number]> = (ctx, deltaPc) => {
-  if (!ctx.pop()) {
-    ctx.pc += deltaPc;
+  const value = ctx.pop();
+  invariant(isBoolean(value), `jumpIfFalse expects boolean value, got ${typeof value}`);
+  if (!value) {
+    const newPc = ctx.pc + deltaPc;
+    invariant(newPc >= 0, `Invalid jump target: ${newPc} is negative`);
+    invariant(newPc <= ctx.maxPc, `Invalid jump target: ${newPc} exceeds max PC of ${ctx.maxPc}`);
+    ctx.pc = newPc;
   }
 };
 jumpIfFalse.displayName = "jumpIfFalse";
@@ -99,6 +100,7 @@ halt.displayName = "halt";
 export const greaterThan: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
+  invariant(isNumber(a) && isNumber(b), `greaterThan expects numeric operands, got ${typeof a} and ${typeof b}`);
   ctx.push(a > b);
 };
 greaterThan.displayName = "greaterThan";
@@ -106,6 +108,7 @@ greaterThan.displayName = "greaterThan";
 export const lessThan: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
+  invariant(isNumber(a) && isNumber(b), `lessThan expects numeric operands, got ${typeof a} and ${typeof b}`);
   ctx.push(a < b);
 };
 lessThan.displayName = "lessThan";
@@ -113,6 +116,7 @@ lessThan.displayName = "lessThan";
 export const add: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
+  invariant(isNumber(a) && isNumber(b), `add expects numeric operands, got ${typeof a} and ${typeof b}`);
   ctx.push(a + b);
 };
 add.displayName = "add";
@@ -121,6 +125,7 @@ add.displayName = "add";
 export const and: InstructionFn<[]> = (ctx) => {
   const a = ctx.pop();
   const b = ctx.pop();
+  invariant(isBoolean(a) && isBoolean(b), `and expects boolean operands, got ${typeof a} and ${typeof b}`);
   ctx.push(a && b);
 };
 and.displayName = "and";
@@ -135,6 +140,8 @@ getJsObjectPropertyForLiteral.displayName = "getJsObjectPropertyForLiteral";
 export const getJsObjectProperty: InstructionFn<[]> = (ctx) => {
   const obj = ctx.pop();
   const key = ctx.pop();
-  ctx.push(obj[key]);
+  invariant(isObjectOrArray(obj), `getProperty called on non-object/array: ${getTypeName(obj)}`);
+  invariant(isString(key) || isNumber(key), `getProperty called with non-string/number property: ${getTypeName(key)}`);
+  ctx.push((obj as any)[key]);
 };
 getJsObjectProperty.displayName = "getJsObjectProperty";
