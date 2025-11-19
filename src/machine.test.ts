@@ -156,7 +156,7 @@ describe("Machine Critical Bug Prevention", () => {
       machine.start();
 
       // Execute nested calls
-      const executionOrder: string[] = [];
+      const executionOrder: (string | number)[] = [];
 
       machine.invokeProcedure(procedures[1], []);
       executionOrder.push(machine.currentProcedure()!.id);
