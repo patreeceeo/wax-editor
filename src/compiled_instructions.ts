@@ -1,4 +1,4 @@
-import {type CompiledInstructionArg, type InstructionFn} from "./compiled_procedure";
+import {type CompiledInstructionArg, type InstructionFn, CompiledProcedure} from "./compiled_procedure";
 import {invariant} from "./error";
 import { isString, isNumber, isBoolean, getTypeName, isObjectOrArray } from "./utils";
 
@@ -87,6 +87,7 @@ sendMessage.displayName = "sendMessage";
 
 export const invokeProcedure: InstructionFn<[]> = (ctx) => {
   const procedure = ctx.pop();
+  invariant(CompiledProcedure.isInstance(procedure), `invokeProcedure expects a CompiledProcedure, got ${typeof procedure}`);
   ctx.machine.invokeProcedure(procedure);
 };
 invokeProcedure.displayName = "invokeProcedure";
@@ -133,7 +134,8 @@ and.displayName = "and";
 /** JS Object instructions **/
 export const getJsObjectPropertyForLiteral: InstructionFn<[string | number]> = (ctx, key) => {
   const obj = ctx.pop();
-  ctx.push(obj[key]);
+  invariant(isObjectOrArray(obj), `getJsObjectPropertyForLiteral called on non-object/array: ${getTypeName(obj)}`);
+  ctx.push((obj as any)[key]);
 };
 getJsObjectPropertyForLiteral.displayName = "getJsObjectPropertyForLiteral";
 

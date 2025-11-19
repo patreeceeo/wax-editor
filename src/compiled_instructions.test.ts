@@ -17,7 +17,11 @@ import {
   add,
   greaterThan,
   lessThan,
-  and
+  and,
+  invokeProcedure,
+  halt,
+  getJsObjectPropertyForLiteral,
+  getJsObjectProperty
 } from "./compiled_instructions";
 import type {ProcedureContext} from "./procedure_context";
 
@@ -374,6 +378,147 @@ describe("Instruction Set Critical Bug Prevention", () => {
       expect(flowCtx.stackSize).toBe(0);
       // PC should have advanced since 10 > 5 is true
       expect(flowCtx.pc).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Machine control instructions", () => {
+    test("halt stops the machine", () => {
+      expect(machine.isRunning()).toBe(true);
+
+      halt(context);
+
+      expect(machine.isRunning()).toBe(false);
+    });
+
+    test("invokeProcedure throws when stack is empty", () => {
+      expect(context.stackSize).toBe(0);
+      expect(() => invokeProcedure(context)).toThrow();
+    });
+
+    test("invokeProcedure throws when non-procedure is on stack", () => {
+      context.push("not_a_procedure");
+      expect(() => invokeProcedure(context)).toThrow();
+    });
+
+    test("invokeProcedure creates new procedure context", () => {
+      const initialStackDepth = machine.getStackDepth();
+      const testProc = createTestProcedure([]);
+
+      context.push(testProc);
+      invokeProcedure(context);
+
+      // A new context should be added to the machine stack
+      expect(machine.getStackDepth()).toBe(initialStackDepth + 1);
+
+      // The current context should be the newly created one
+      const currentContext = machine.currentProcedureContext()!;
+      expect(currentContext.procedure).toBe(testProc);
+      expect(currentContext.stackSize).toBe(0); // No arguments transferred
+    });
+  });
+
+  describe("JS Object property access", () => {
+    describe("getJsObjectProperty", () => {
+      test("getJsObjectProperty throws when insufficient stack items", () => {
+        // Push only object, no key
+        context.push({a: 1});
+        expect(context.stackSize).toBe(1);
+        expect(() => getJsObjectProperty(context)).toThrow();
+      });
+
+      test("getJsObjectProperty throws when no object on stack", () => {
+        // Empty stack
+        expect(() => getJsObjectProperty(context)).toThrow();
+      });
+
+      test("getJsObjectProperty throws when accessing property of non-object", () => {
+        context.push("not_an_object");
+        context.push("some_property");
+        expect(() => getJsObjectProperty(context)).toThrow();
+      });
+
+      test("getJsObjectProperty throws when key is not string or number", () => {
+        const obj = {valid: "value"};
+        context.push(obj);
+        context.push({}); // object as key (invalid)
+
+        expect(() => getJsObjectProperty(context)).toThrow();
+      });
+
+      test("getJsObjectProperty works correctly with string key", () => {
+        const obj = {name: "test", value: 42};
+        context.push("name"); // key
+        context.push(obj);   // object
+
+        getJsObjectProperty(context);
+
+        expect(context.getStackTop()).toBe("test");
+        expect(context.stackSize).toBe(1);
+      });
+
+      test("getJsObjectProperty works correctly with numeric key", () => {
+        const arr = ["first", "second", "third"];
+        context.push(1);     // numeric key
+        context.push(arr);   // array
+
+        getJsObjectProperty(context);
+
+        expect(context.getStackTop()).toBe("second");
+        expect(context.stackSize).toBe(1);
+      });
+
+      test("getJsObjectProperty returns undefined for non-existent property", () => {
+        const obj = {existing: "value"};
+        context.push("nonexistent"); // key
+        context.push(obj);           // object
+
+        getJsObjectProperty(context);
+
+        expect(context.getStackTop()).toBeUndefined();
+        expect(context.stackSize).toBe(1);
+      });
+    });
+
+    describe("getJsObjectPropertyForLiteral", () => {
+      test("getJsObjectPropertyForLiteral throws when stack is empty", () => {
+        expect(context.stackSize).toBe(0);
+        expect(() => getJsObjectPropertyForLiteral(context, "test")).toThrow();
+      });
+
+      test("getJsObjectPropertyForLiteral throws when accessing property of non-object", () => {
+        context.push("not_an_object");
+        expect(() => getJsObjectPropertyForLiteral(context, "someProperty")).toThrow();
+      });
+
+      test("getJsObjectPropertyForLiteral works correctly with valid object", () => {
+        const obj = {name: "test", value: 42, nested: {prop: "nested"}};
+        context.push(obj);
+
+        getJsObjectPropertyForLiteral(context, "name");
+
+        expect(context.getStackTop()).toBe("test");
+        expect(context.stackSize).toBe(1);
+      });
+
+      test("getJsObjectPropertyForLiteral works with numeric index", () => {
+        const arr = ["first", "second", "third"];
+        context.push(arr);
+
+        getJsObjectPropertyForLiteral(context, 1);
+
+        expect(context.getStackTop()).toBe("second");
+        expect(context.stackSize).toBe(1);
+      });
+
+      test("getJsObjectPropertyForLiteral returns undefined for non-existent property", () => {
+        const obj = {existing: "value"};
+        context.push(obj);
+
+        getJsObjectPropertyForLiteral(context, "nonexistent");
+
+        expect(context.getStackTop()).toBeUndefined();
+        expect(context.stackSize).toBe(1);
+      });
     });
   });
 });
