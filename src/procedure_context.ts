@@ -65,6 +65,7 @@ export class ProcedureContext {
     this._stack.push(value);
   }
   pop() {
+    invariant(this._stack.length > 0, "Cannot pop from empty stack");
     const popped = this._stack.pop();
     return popped;
   }
@@ -73,6 +74,10 @@ export class ProcedureContext {
   }
   get stackSize() {
     return this._stack.length;
+  }
+
+  get maxPc() {
+    return Math.max(0, this._procedure.length - 1);
   }
 
   private _getVariableContext(variableName: string): ProcedureContext {
@@ -108,6 +113,11 @@ export class ProcedureContext {
   pushReturnValue(value: CompiledInstructionArg) {
     this._returnValues.push(value);
   }
+
+  // Test helper method to access return values
+  getReturnValues() {
+    return [...this._returnValues];
+  }
   acceptReturnValues(otherCtx: ProcedureContext): void {
     this._stack.push(...otherCtx._returnValues);
   }
@@ -118,6 +128,23 @@ export class ProcedureContext {
       stack: [...this._stack],
       pc: this.pc
     };
+  }
+
+  // Semantic test helpers
+  getStackTop(): CompiledInstructionArg | undefined {
+    return this._stack[this._stack.length - 1];
+  }
+
+  hasVariable(name: string): boolean {
+    return name in this._variables;
+  }
+
+  getVariableCount(): number {
+    return Object.keys(this._variables).length;
+  }
+
+  getReturnCount(): number {
+    return this._returnValues.length;
   }
 }
 
