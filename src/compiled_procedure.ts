@@ -1,3 +1,4 @@
+import type {ProcedureContext} from "./procedure_context";
 import {isObjectOrArray} from "./utils";
 
 const CompiledProcedureSymbol = Symbol("CompiledProcedure");
