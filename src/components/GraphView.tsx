@@ -191,8 +191,11 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
  */
 export function GraphView({ value, width = 800, height = 600 }: GraphViewProps) {
   const [scale, setScale] = useState(1);
-  const [translateX] = useState(0);
-  const [translateY] = useState(0);
+  const [translateX, setTranslateX] = useState(0);
+  const [translateY, setTranslateY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Transform object to graph structure
@@ -201,11 +204,39 @@ export function GraphView({ value, width = 800, height = 600 }: GraphViewProps) 
     return hierarchicalLayout(data, width, height);
   }, [value, width, height]);
 
-  // Handle pan/zoom
+  // Handle zoom
   const handleWheel = (event: React.WheelEvent) => {
     event.preventDefault();
     const delta = event.deltaY > 0 ? 0.9 : 1.1;
     setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
+  };
+
+  // Handle pan start
+  const handleMouseDown = (event: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: event.clientX, y: event.clientY });
+    setDragOffset({ x: translateX, y: translateY });
+  };
+
+  // Handle pan move
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (!isDragging) return;
+
+    const deltaX = event.clientX - dragStart.x;
+    const deltaY = event.clientY - dragStart.y;
+
+    setTranslateX(dragOffset.x + deltaX);
+    setTranslateY(dragOffset.y + deltaY);
+  };
+
+  // Handle pan end
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Handle mouse leave to stop dragging
+  const handleMouseLeave = () => {
+    setIsDragging(false);
   };
 
   return (
@@ -215,7 +246,11 @@ export function GraphView({ value, width = 800, height = 600 }: GraphViewProps) 
         width={width}
         height={height}
         onWheel={handleWheel}
-        className="cursor-move"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        className={isDragging ? "cursor-grabbing" : "cursor-grab"}
       >
         <defs>
           <marker
