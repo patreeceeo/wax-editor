@@ -6,6 +6,7 @@ import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
 import Button from './Button';
 import ProgramViewer from './ProgramViewer';
 import {TreeView} from './TreeView';
+import {GraphView} from './GraphView';
 
 interface DebuggerProps {
   machine: Machine;
@@ -181,6 +182,7 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
           </div>
         </div>
       </div>
+      <GraphView value={machines[machineIndex]} />
       <TreeView value={machines[machineIndex]} label='machine'/>
     </MachineProvider>
   )

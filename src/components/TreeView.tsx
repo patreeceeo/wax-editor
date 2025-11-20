@@ -1,6 +1,6 @@
 import {useCallback, useState, type ToggleEvent} from "react";
 import {jsObjectClass, WaxClass} from "../wax_classes";
-import {isObjectOrArray} from "../utils";
+import {getObjectEntries} from "./shared/DataVisualizationUtils";
 
 interface TreeViewProps {
   value: any;
@@ -22,7 +22,7 @@ export function TreeView({ value, label, inline }: TreeViewProps) {
     setIsExpanded(!isExpanded);
   }, [isExpanded, setIsExpanded]);
 
-  const entries = isObjectOrArray(value) ? getEntries(value) : [];
+  const entries = getObjectEntries(value);
   const isEmpty = entries.length === 0;
   const ContainerTagName = isEmpty ? 'div' : 'details';
 
@@ -34,14 +34,10 @@ export function TreeView({ value, label, inline }: TreeViewProps) {
   </ContainerTagName>;
 }
 
-function getEntries(value: any): [string | number, any][] {
-  const isArray = Array.isArray(value);
-  return isArray ? value.map((value, index) => [index, value]) : Object.entries(value);
-}
 
 function Label({ value, label, isReference = true }: { value: any, label?: string | number, isReference?: boolean }) {
   const labelWaxClass = WaxClass.forJsObject(label);
-  const entries = isReference ? getEntries(value) : [];
+  const entries = isReference ? getObjectEntries(value) : [];
   const isArray = Array.isArray(value);
   const SummaryTagName = isReference && entries.length > 0 ? 'summary' : 'span';
   const waxClass = WaxClass.forJsObject(value);
@@ -64,11 +60,11 @@ function Label({ value, label, isReference = true }: { value: any, label?: strin
 }
 
 export function TreeViewEntries({value}: TreeViewProps) {
-  const entries = getEntries(value);
+  const entries = getObjectEntries(value);
   const isEmpty = entries.length === 0;
   return !isEmpty && (
     <div className="ml-8 border-l-2 border-gray-200">
-      {entries.map(([key, value]) => (
+      {entries.map(({key, value}) => (
         <TreeView
           key={key}
           value={value}
