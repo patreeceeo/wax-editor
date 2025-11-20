@@ -37,8 +37,8 @@ describe("GraphView", () => {
     render(<GraphView value={undefined} />);
   });
 
-  test("accepts custom dimensions", () => {
+  test("renders with default dimensions", () => {
     const testData = { width: 100, height: 200 };
-    render(<GraphView value={testData} width={400} height={300} />);
+    render(<GraphView value={testData} />);
   });
 });

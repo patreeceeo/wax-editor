@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { WaxClass } from '../wax_classes';
 import { isObjectOrArray } from '../utils';
 import { getObjectEntries, getObjectId } from './shared/DataVisualizationUtils';
@@ -26,8 +26,6 @@ export interface GraphData {
 
 interface GraphViewProps {
   value: any;
-  width?: number;
-  height?: number;
 }
 
 /**
@@ -92,7 +90,7 @@ function objectToGraph(rootValue: any): GraphData {
  * Simple hierarchical layout algorithm
  */
 function hierarchicalLayout(graphData: GraphData, width: number, height: number): GraphData {
-  const levelHeight = height / 6; // Max 6 levels
+  const levelHeight = Math.max(80, height / 6); // Max 6 levels, minimum 80px per level
   const nodesByLevel = new Map<number, GraphNode[]>();
 
   // Group nodes by level
@@ -107,7 +105,7 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
   const positionedNodes = graphData.nodes.map(node => {
     const nodesInLevel = nodesByLevel.get(node.level)!;
     const levelIndex = nodesInLevel.indexOf(node);
-    const levelWidth = width / (nodesInLevel.length + 1);
+    const levelWidth = Math.max(100, width / (nodesInLevel.length + 1)); // Minimum 100px per node
 
     return {
       ...node,
@@ -189,20 +187,50 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
 /**
  * Main GraphView component
  */
-export function GraphView({ value, width = 800, height = 600 }: GraphViewProps) {
+export function GraphView({ value }: GraphViewProps) {
   const [scale, setScale] = useState(1);
   const [translateX, setTranslateX] = useState(0);
   const [translateY, setTranslateY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Update dimensions when container size changes
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        setDimensions({ width: clientWidth, height: clientHeight });
+      }
+    };
+
+    // Initial measurement
+    updateDimensions();
+
+    // Set up resize observer if available
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(updateDimensions);
+      if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
+      }
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, []);
 
   // Transform object to graph structure
   const graphData = useMemo(() => {
     const data = objectToGraph(value);
-    return hierarchicalLayout(data, width, height);
-  }, [value, width, height]);
+    return hierarchicalLayout(data, dimensions.width, dimensions.height);
+  }, [value, dimensions]);
 
   // Handle zoom
   const handleWheel = (event: React.WheelEvent) => {
@@ -240,17 +268,25 @@ export function GraphView({ value, width = 800, height = 600 }: GraphViewProps) 
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
+    <div
+      ref={containerRef}
+      className="w-full h-full border border-gray-300 rounded-lg overflow-hidden relative"
+    >
       <svg
         ref={svgRef}
-        width={width}
-        height={height}
+        width={dimensions.width}
+        height={dimensions.height}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         className={isDragging ? "cursor-grabbing" : "cursor-grab"}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block'
+        }}
       >
         <defs>
           <marker
