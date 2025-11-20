@@ -232,12 +232,23 @@ export function GraphView({ value }: GraphViewProps) {
     return hierarchicalLayout(data, dimensions.width, dimensions.height);
   }, [value, dimensions]);
 
-  // Handle zoom
-  const handleWheel = (event: React.WheelEvent) => {
-    event.preventDefault();
-    const delta = event.deltaY > 0 ? 0.9 : 1.1;
-    setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
-  };
+  // Add non-passive wheel event listener for zoom
+  useEffect(() => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    const handleWheelNonPassive = (event: WheelEvent) => {
+      event.preventDefault();
+      const delta = event.deltaY > 0 ? 0.9 : 1.1;
+      setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
+    };
+
+    svgElement.addEventListener('wheel', handleWheelNonPassive, { passive: false });
+
+    return () => {
+      svgElement.removeEventListener('wheel', handleWheelNonPassive);
+    };
+  }, []);
 
   // Handle pan start
   const handleMouseDown = (event: React.MouseEvent) => {
@@ -276,7 +287,6 @@ export function GraphView({ value }: GraphViewProps) {
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
