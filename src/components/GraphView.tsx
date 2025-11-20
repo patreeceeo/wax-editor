@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { WaxClass } from '../wax_classes';
-import { isObjectOrArray } from '../utils';
+import { isJsPrimitive, isObjectOrArray } from '../utils';
 import { getObjectEntries, getObjectId } from './shared/DataVisualizationUtils';
 
 export interface GraphNode {
@@ -121,8 +121,6 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
  * Individual graph node component
  */
 function GraphNodeComponent({ node }: { node: GraphNode }) {
-  const NodeContent = node.waxClass.renderReact(node.value);
-
   return (
     <g transform={`translate(${node.x}, ${node.y})`}>
       {/* Background circle for node */}
@@ -141,9 +139,11 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
         height={20}
         className="pointer-events-none"
       >
-        <div className="text-xs text-center overflow-hidden whitespace-nowrap">
-          {NodeContent}
-        </div>
+        {isJsPrimitive(node.value) && (
+          <div className="text-xs text-center overflow-hidden whitespace-nowrap">
+            {node.waxClass.renderReact(node.value)}
+          </div>
+        )}
       </foreignObject>
     </g>
   );

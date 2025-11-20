@@ -25,3 +25,7 @@ export function isBoolean(value: any): value is boolean {
   return getTypeName(value) === 'boolean';
 }
 
+export function isJsPrimitive(value: any): value is (string | number | boolean | undefined) {
+  const typeName = getTypeName(value);
+  return value === undefined || typeName === 'string' || typeName === 'number' || typeName === 'boolean';
+}
