@@ -201,6 +201,28 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
 
   if (!sourceNode || !targetNode) return null;
 
+  // Calculate edge properties
+  const dx = targetNode.x - sourceNode.x;
+  const dy = targetNode.y - sourceNode.y;
+  const angle = Math.atan2(dy, dx);
+  const midX = (sourceNode.x + targetNode.x) / 2;
+  const midY = (sourceNode.y + targetNode.y) / 2;
+
+  // Calculate perpendicular offset for label positioning (above and to the left)
+  const perpendicularAngle = angle + Math.PI / 2; // 90 degrees perpendicular
+  const offsetDistance = 15; // Distance from the edge line
+  const labelX = midX + Math.cos(perpendicularAngle) * offsetDistance;
+  const labelY = midY + Math.sin(perpendicularAngle) * offsetDistance;
+
+  // Adjust angle to ensure text is always readable (not upside-down)
+  let adjustedAngle = angle;
+  if (Math.abs(angle) > Math.PI / 2) {
+    adjustedAngle = angle + Math.PI; // Rotate 180 degrees if angle is > 90 degrees or < -90 degrees
+  }
+
+  // Convert adjusted angle to degrees for rotation
+  const angleDegrees = (adjustedAngle * 180) / Math.PI;
+
   return (
     <g>
       <line
@@ -212,13 +234,15 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
         strokeWidth={2}
         markerEnd="url(#arrowhead)"
       />
-      {/* Edge label */}
+      {/* Edge label with rotation */}
       <text
-        x={(sourceNode.x + targetNode.x) / 2}
-        y={(sourceNode.y + targetNode.y) / 2}
+        x={labelX}
+        y={labelY}
         fontSize={12}
         fill="rgb(217, 119, 6)"
         textAnchor="middle"
+        dominantBaseline="middle"
+        transform={`rotate(${angleDegrees} ${labelX} ${labelY})`}
         className="pointer-events-none"
       >
         {String(edge.label)}
