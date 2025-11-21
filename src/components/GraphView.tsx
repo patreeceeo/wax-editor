@@ -134,7 +134,7 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
       tempSpan.textContent = textElement.textContent;
       document.body.appendChild(tempSpan);
 
-      setTextWidth(tempSpan.offsetWidth * 1.2);
+      setTextWidth(tempSpan.offsetWidth * 1.2 + 10);
 
       document.body.removeChild(tempSpan);
     }
@@ -145,11 +145,10 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
     return (
       <g transform={`translate(${node.x}, ${node.y})`}>
         <circle
-          r={20}
+          r={10}
           fill="white"
-          stroke="#94a3b8"
+          stroke="oklch(0.551 0.027 264.364)"
           strokeWidth={2}
-          className="cursor-pointer"
         />
       </g>
     );
@@ -171,9 +170,8 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
         rx={cornerRadius}
         ry={cornerRadius}
         fill="white"
-        stroke="#94a3b8"
+        stroke="oklch(0.623 0.214 259.815)"
         strokeWidth={2}
-        className="cursor-pointer"
       />
       {/* Foreign object for WaxClass content */}
       <foreignObject
