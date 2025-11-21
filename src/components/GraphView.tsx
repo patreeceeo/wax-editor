@@ -151,6 +151,9 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
 // Cache for text width measurements to avoid repeated DOM operations
 const textWidthCache = new Map<string, number>();
 
+// Cache for WaxClass renderReact results
+const renderCache = new Map<string, React.ReactElement>();
+
 /**
  * Fast text width measurement using cached results
  */
@@ -169,6 +172,29 @@ function measureTextWidth(text: string): number {
 }
 
 /**
+ * Memoized WaxClass renderReact function
+ */
+function getMemoizedRenderedValue(value: any, waxClass: WaxClass): React.ReactElement {
+  // Create cache key based on value type and actual value
+  const valueKey = `${waxClass.displayName}:${typeof value}:${String(value)}`;
+
+  if (renderCache.has(valueKey)) {
+    return renderCache.get(valueKey)!;
+  }
+
+  const rendered = waxClass.renderReact(value);
+  renderCache.set(valueKey, rendered);
+
+  // Limit cache size to prevent memory leaks
+  if (renderCache.size > 100) {
+    const firstKey = renderCache.keys().next().value;
+    renderCache.delete(firstKey);
+  }
+
+  return rendered;
+}
+
+/**
  * Memoized individual graph node component
  */
 const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
@@ -177,6 +203,12 @@ const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
     if (!isJsPrimitive(node.value)) return 60;
     return measureTextWidth(String(node.value));
   }, [node.value]);
+
+  // Memoize the rendered value from WaxClass
+  const renderedValue = useMemo(() => {
+    if (!isJsPrimitive(node.value)) return null;
+    return getMemoizedRenderedValue(node.value, node.waxClass);
+  }, [node.value, node.waxClass]);
 
   if (!isJsPrimitive(node.value)) {
     // For non-primitive objects, use a simple circle
@@ -220,7 +252,7 @@ const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
         className="pointer-events-none"
       >
         <div className="text-xs text-center overflow-hidden whitespace-nowrap flex items-center justify-center h-full">
-          {node.waxClass.renderReact(node.value)}
+          {renderedValue}
         </div>
       </foreignObject>
     </g>
