@@ -155,16 +155,21 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
     );
   }
 
-  // For primitive values, use an ellipse sized to fit the text
-  const rx = textWidth / 2;
-  const ry = 15;
+  // For primitive values, use a rectangle with rounded corners
+  const rectWidth = textWidth;
+  const rectHeight = 30;
+  const cornerRadius = 8;
 
   return (
     <g transform={`translate(${node.x}, ${node.y})`}>
-      {/* Background ellipse for node */}
-      <ellipse
-        rx={rx}
-        ry={ry}
+      {/* Background rectangle with rounded corners for node */}
+      <rect
+        x={-rectWidth / 2}
+        y={-rectHeight / 2}
+        width={rectWidth}
+        height={rectHeight}
+        rx={cornerRadius}
+        ry={cornerRadius}
         fill="white"
         stroke="#94a3b8"
         strokeWidth={2}
@@ -172,10 +177,10 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
       />
       {/* Foreign object for WaxClass content */}
       <foreignObject
-        x={-rx}
-        y={-ry}
-        width={textWidth}
-        height={ry * 2}
+        x={-rectWidth / 2}
+        y={-rectHeight / 2}
+        width={rectWidth}
+        height={rectHeight}
         className="pointer-events-none"
       >
         <div
