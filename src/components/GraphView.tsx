@@ -96,10 +96,22 @@ function objectToGraph(rootValue: any): GraphData {
   return graphData;
 }
 
+// Cache for layout calculations to avoid recomputation
+const layoutCache = new Map<string, GraphData>();
+
 /**
- * Simple hierarchical layout algorithm
+ * Simple hierarchical layout algorithm (cached)
  */
 function hierarchicalLayout(graphData: GraphData, width: number, height: number): GraphData {
+  // Create cache key based on graph structure and dimensions
+  const nodeIds = graphData.nodes.map(n => n.id).sort().join(',');
+  const edgeIds = graphData.edges.map(e => e.id).sort().join(',');
+  const cacheKey = `${nodeIds}|${edgeIds}|${width}x${height}`;
+
+  if (layoutCache.has(cacheKey)) {
+    return layoutCache.get(cacheKey)!;
+  }
+
   const levelHeight = Math.max(80, height / 6); // Max 6 levels, minimum 80px per level
   const nodesByLevel = new Map<number, GraphNode[]>();
 
@@ -124,7 +136,16 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
     };
   });
 
-  return { ...graphData, nodes: positionedNodes };
+  const result = { ...graphData, nodes: positionedNodes };
+  layoutCache.set(cacheKey, result);
+
+  // Limit cache size to prevent memory leaks
+  if (layoutCache.size > 50) {
+    const firstKey = layoutCache.keys().next().value;
+    layoutCache.delete(firstKey);
+  }
+
+  return result;
 }
 
 // Cache for text width measurements to avoid repeated DOM operations
