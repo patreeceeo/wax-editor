@@ -117,27 +117,34 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
   return { ...graphData, nodes: positionedNodes };
 }
 
+// Cache for text width measurements to avoid repeated DOM operations
+const textWidthCache = new Map<string, number>();
+
 /**
- * Individual graph node component
+ * Fast text width measurement using cached results
  */
-function GraphNodeComponent({ node }: { node: GraphNode }) {
-  const nodeRef = React.useRef<HTMLDivElement>(null);
-  const [textWidth, setTextWidth] = useState(60);
+function measureTextWidth(text: string): number {
+  if (textWidthCache.has(text)) {
+    return textWidthCache.get(text)!;
+  }
 
-  // Measure text width and update node size
-  useEffect(() => {
-    if (nodeRef.current && isJsPrimitive(node.value)) {
-      const textElement = nodeRef.current;
-      const tempSpan = document.createElement('span');
-      tempSpan.style.fontSize = getComputedStyle(textElement).fontSize;
-      tempSpan.style.fontFamily = getComputedStyle(textElement).fontFamily;
-      tempSpan.textContent = textElement.textContent;
-      document.body.appendChild(tempSpan);
+  // Approximate text width calculation (faster than DOM measurement)
+  // This is a rough estimate but much faster than DOM manipulation
+  const avgCharWidth = 7; // Average character width for monospace-ish rendering
+  const measuredWidth = Math.min(Math.max(text.length * avgCharWidth + 20, 60), 200);
 
-      setTextWidth(tempSpan.offsetWidth * 1.2 + 10);
+  textWidthCache.set(text, measuredWidth);
+  return measuredWidth;
+}
 
-      document.body.removeChild(tempSpan);
-    }
+/**
+ * Memoized individual graph node component
+ */
+const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
+  // Pre-calculate text width without DOM measurement
+  const textWidth = useMemo(() => {
+    if (!isJsPrimitive(node.value)) return 60;
+    return measureTextWidth(String(node.value));
   }, [node.value]);
 
   if (!isJsPrimitive(node.value)) {
@@ -181,21 +188,20 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
         height={rectHeight}
         className="pointer-events-none"
       >
-        <div
-          ref={nodeRef}
-          className="text-xs text-center overflow-hidden whitespace-nowrap flex items-center justify-center h-full"
-        >
+        <div className="text-xs text-center overflow-hidden whitespace-nowrap flex items-center justify-center h-full">
           {node.waxClass.renderReact(node.value)}
         </div>
       </foreignObject>
     </g>
   );
-}
+});
+
+GraphNodeComponent.displayName = 'GraphNodeComponent';
 
 /**
- * Individual graph edge component
+ * Memoized individual graph edge component
  */
-function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode[] }) {
+const GraphEdgeComponent = React.memo(({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode[] }) => {
   const sourceNode = nodes.find(n => n.id === edge.source);
   const targetNode = nodes.find(n => n.id === edge.target);
 
@@ -249,7 +255,9 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
       </text>
     </g>
   );
-}
+});
+
+GraphEdgeComponent.displayName = 'GraphEdgeComponent';
 
 /**
  * Main GraphView component
