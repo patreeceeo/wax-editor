@@ -28,10 +28,18 @@ interface GraphViewProps {
   value: any;
 }
 
+// Cache for graph data transformation to avoid recomputation
+const graphDataCache = new WeakMap<any, GraphData>();
+
 /**
- * Transform a JavaScript object into a graph structure
+ * Transform a JavaScript object into a graph structure (cached)
  */
 function objectToGraph(rootValue: any): GraphData {
+  // Check cache first
+  if (graphDataCache.has(rootValue)) {
+    return graphDataCache.get(rootValue)!;
+  }
+
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const visited = new Set<string>();
@@ -83,7 +91,9 @@ function objectToGraph(rootValue: any): GraphData {
     }
   }
 
-  return { nodes, edges };
+  const graphData = { nodes, edges };
+  graphDataCache.set(rootValue, graphData);
+  return graphData;
 }
 
 /**
