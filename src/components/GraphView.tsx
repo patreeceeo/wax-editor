@@ -121,11 +121,50 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
  * Individual graph node component
  */
 function GraphNodeComponent({ node }: { node: GraphNode }) {
+  const nodeRef = React.useRef<HTMLDivElement>(null);
+  const [textWidth, setTextWidth] = useState(60);
+
+  // Measure text width and update node size
+  useEffect(() => {
+    if (nodeRef.current && isJsPrimitive(node.value)) {
+      const textElement = nodeRef.current;
+      const tempSpan = document.createElement('span');
+      tempSpan.style.fontSize = getComputedStyle(textElement).fontSize;
+      tempSpan.style.fontFamily = getComputedStyle(textElement).fontFamily;
+      tempSpan.textContent = textElement.textContent;
+      document.body.appendChild(tempSpan);
+
+      setTextWidth(tempSpan.offsetWidth * 1.2);
+
+      document.body.removeChild(tempSpan);
+    }
+  }, [node.value]);
+
+  if (!isJsPrimitive(node.value)) {
+    // For non-primitive objects, use a simple circle
+    return (
+      <g transform={`translate(${node.x}, ${node.y})`}>
+        <circle
+          r={20}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={2}
+          className="cursor-pointer"
+        />
+      </g>
+    );
+  }
+
+  // For primitive values, use an ellipse sized to fit the text
+  const rx = textWidth / 2;
+  const ry = 15;
+
   return (
     <g transform={`translate(${node.x}, ${node.y})`}>
-      {/* Background circle for node */}
-      <circle
-        r={20}
+      {/* Background ellipse for node */}
+      <ellipse
+        rx={rx}
+        ry={ry}
         fill="white"
         stroke="#94a3b8"
         strokeWidth={2}
@@ -133,17 +172,18 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
       />
       {/* Foreign object for WaxClass content */}
       <foreignObject
-        x={-30}
-        y={-10}
-        width={60}
-        height={20}
+        x={-rx}
+        y={-ry}
+        width={textWidth}
+        height={ry * 2}
         className="pointer-events-none"
       >
-        {isJsPrimitive(node.value) && (
-          <div className="text-xs text-center overflow-hidden whitespace-nowrap">
-            {node.waxClass.renderReact(node.value)}
-          </div>
-        )}
+        <div
+          ref={nodeRef}
+          className="text-xs text-center overflow-hidden whitespace-nowrap flex items-center justify-center h-full"
+        >
+          {node.waxClass.renderReact(node.value)}
+        </div>
       </foreignObject>
     </g>
   );
