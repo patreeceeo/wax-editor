@@ -146,7 +146,7 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
       <g transform={`translate(${node.x}, ${node.y})`}>
         <circle
           r={10}
-          fill="white"
+          fill="oklch(0.551 0.027 264.364)"
           stroke="oklch(0.551 0.027 264.364)"
           strokeWidth={2}
         />
@@ -169,7 +169,7 @@ function GraphNodeComponent({ node }: { node: GraphNode }) {
         height={rectHeight}
         rx={cornerRadius}
         ry={cornerRadius}
-        fill="white"
+        fill="var(--tw-prose-pre-bg)"
         stroke="oklch(0.623 0.214 259.815)"
         strokeWidth={2}
       />
@@ -208,7 +208,7 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
         y1={sourceNode.y}
         x2={targetNode.x}
         y2={targetNode.y}
-        stroke="#cbd5e1"
+        stroke="rgb(4, 120, 87)"
         strokeWidth={2}
         markerEnd="url(#arrowhead)"
       />
@@ -217,7 +217,7 @@ function GraphEdgeComponent({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode
         x={(sourceNode.x + targetNode.x) / 2}
         y={(sourceNode.y + targetNode.y) / 2}
         fontSize={12}
-        fill="#64748b"
+        fill="rgb(217, 119, 6)"
         textAnchor="middle"
         className="pointer-events-none"
       >
@@ -325,6 +325,7 @@ export function GraphView({ value }: GraphViewProps) {
     <div
       ref={containerRef}
       className="w-full h-full border border-gray-300 rounded-lg overflow-hidden relative"
+      style={{backgroundColor: 'var(--tw-prose-pre-bg)'}}
     >
       <svg
         ref={svgRef}
@@ -346,13 +347,13 @@ export function GraphView({ value }: GraphViewProps) {
             id="arrowhead"
             markerWidth="10"
             markerHeight="7"
-            refX="20"
+            refX="15"
             refY="3.5"
             orient="auto"
           >
             <polygon
               points="0 0, 10 3.5, 0 7"
-              fill="#cbd5e1"
+              fill="rgb(4, 120, 87)"
             />
           </marker>
         </defs>
