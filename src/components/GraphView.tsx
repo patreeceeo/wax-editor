@@ -39,10 +39,7 @@ function objectToGraph(rootValue: any): GraphData {
   // Check cache first - handle both primitives and objects
   let cachedData: GraphData | undefined;
 
-  if (rootValue === null || rootValue === undefined) {
-    const cacheKey = `null:${rootValue}`;
-    cachedData = graphDataCache.get(cacheKey);
-  } else if (typeof rootValue === 'object') {
+  if (isObjectOrArray(rootValue)) {
     cachedData = graphDataWeakCache.get(rootValue);
   } else {
     const cacheKey = `${typeof rootValue}:${rootValue}`;
@@ -109,10 +106,7 @@ function objectToGraph(rootValue: any): GraphData {
   const graphData = { nodes, edges };
 
   // Cache based on value type
-  if (rootValue === null || rootValue === undefined) {
-    const cacheKey = `null:${rootValue}`;
-    graphDataCache.set(cacheKey, graphData);
-  } else if (typeof rootValue === 'object') {
+  if (isObjectOrArray(rootValue)) {
     graphDataWeakCache.set(rootValue, graphData);
   } else {
     const cacheKey = `${typeof rootValue}:${rootValue}`;
