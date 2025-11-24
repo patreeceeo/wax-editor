@@ -151,7 +151,7 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
 
     return {
       ...node,
-      x: levelWidth * (levelIndex + 1),
+      x: levelWidth * (levelIndex - (nodesInLevel.length - 1) / 2),
       y: 50 + node.level * levelHeight
     };
   });
