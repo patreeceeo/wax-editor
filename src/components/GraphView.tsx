@@ -29,15 +29,28 @@ interface GraphViewProps {
 }
 
 // Cache for graph data transformation to avoid recomputation
-const graphDataCache = new WeakMap<any, GraphData>();
+const graphDataCache = new Map<string, GraphData>();
+const graphDataWeakCache = new WeakMap<object, GraphData>();
 
 /**
  * Transform a JavaScript object into a graph structure (cached)
  */
 function objectToGraph(rootValue: any): GraphData {
-  // Check cache first
-  if (graphDataCache.has(rootValue)) {
-    return graphDataCache.get(rootValue)!;
+  // Check cache first - handle both primitives and objects
+  let cachedData: GraphData | undefined;
+
+  if (rootValue === null || rootValue === undefined) {
+    const cacheKey = `null:${rootValue}`;
+    cachedData = graphDataCache.get(cacheKey);
+  } else if (typeof rootValue === 'object') {
+    cachedData = graphDataWeakCache.get(rootValue);
+  } else {
+    const cacheKey = `${typeof rootValue}:${rootValue}`;
+    cachedData = graphDataCache.get(cacheKey);
+  }
+
+  if (cachedData) {
+    return cachedData;
   }
 
   const nodes: GraphNode[] = [];
@@ -92,7 +105,18 @@ function objectToGraph(rootValue: any): GraphData {
   }
 
   const graphData = { nodes, edges };
-  graphDataCache.set(rootValue, graphData);
+
+  // Cache based on value type
+  if (rootValue === null || rootValue === undefined) {
+    const cacheKey = `null:${rootValue}`;
+    graphDataCache.set(cacheKey, graphData);
+  } else if (typeof rootValue === 'object') {
+    graphDataWeakCache.set(rootValue, graphData);
+  } else {
+    const cacheKey = `${typeof rootValue}:${rootValue}`;
+    graphDataCache.set(cacheKey, graphData);
+  }
+
   return graphData;
 }
 
@@ -142,7 +166,9 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
   // Limit cache size to prevent memory leaks
   if (layoutCache.size > 50) {
     const firstKey = layoutCache.keys().next().value;
-    layoutCache.delete(firstKey);
+    if (firstKey !== undefined) {
+      layoutCache.delete(firstKey);
+    }
   }
 
   return result;
@@ -188,7 +214,9 @@ function getMemoizedRenderedValue(value: any, waxClass: WaxClass): React.ReactEl
   // Limit cache size to prevent memory leaks
   if (renderCache.size > 100) {
     const firstKey = renderCache.keys().next().value;
-    renderCache.delete(firstKey);
+    if (firstKey !== undefined) {
+      renderCache.delete(firstKey);
+    }
   }
 
   return rendered;
@@ -264,9 +292,9 @@ GraphNodeComponent.displayName = 'GraphNodeComponent';
 /**
  * Memoized individual graph edge component
  */
-const GraphEdgeComponent = React.memo(({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode[] }) => {
-  const sourceNode = nodes.find(n => n.id === edge.source);
-  const targetNode = nodes.find(n => n.id === edge.target);
+const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdge; nodeLookupMap: Map<string, GraphNode> }) => {
+  const sourceNode = nodeLookupMap.get(edge.source);
+  const targetNode = nodeLookupMap.get(edge.target);
 
   if (!sourceNode || !targetNode) return null;
 
@@ -364,10 +392,18 @@ export function GraphView({ value }: GraphViewProps) {
     };
   }, []);
 
-  // Transform object to graph structure
-  const graphData = useMemo(() => {
+  // Transform object to graph structure and create lookup map
+  const { graphData, nodeLookupMap } = useMemo(() => {
     const data = objectToGraph(value);
-    return hierarchicalLayout(data, dimensions.width, dimensions.height);
+    const layoutData = hierarchicalLayout(data, dimensions.width, dimensions.height);
+
+    // Create node lookup map for O(1) access
+    const lookupMap = new Map<string, GraphNode>();
+    for (const node of layoutData.nodes) {
+      lookupMap.set(node.id, node);
+    }
+
+    return { graphData: layoutData, nodeLookupMap: lookupMap };
   }, [value, dimensions]);
 
   // Add non-passive wheel event listener for zoom
@@ -456,7 +492,7 @@ export function GraphView({ value }: GraphViewProps) {
         <g transform={`translate(${translateX}, ${translateY}) scale(${scale})`}>
           {/* Render edges first (behind nodes) */}
           {graphData.edges.map(edge => (
-            <GraphEdgeComponent key={edge.id} edge={edge} nodes={graphData.nodes} />
+            <GraphEdgeComponent key={edge.id} edge={edge} nodeLookupMap={nodeLookupMap} />
           ))}
 
           {/* Render nodes */}
