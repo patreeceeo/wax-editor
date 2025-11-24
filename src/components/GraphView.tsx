@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { WaxClass } from '../wax_classes';
-import { isJsPrimitive, isObjectOrArray } from '../utils';
+import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
+import { arrayClass, jsObjectClass, WaxClass } from '../wax_classes';
+import { isObjectOrArray } from '../utils';
 import { getObjectEntries, getObjectId } from './shared/DataVisualizationUtils';
 
 export interface GraphNode {
@@ -66,18 +66,20 @@ function objectToGraph(rootValue: any): GraphData {
   while (queue.length > 0) {
     const { value, id, level } = queue.shift()!;
 
+    const waxClass = WaxClass.forJsObject(value);
+
     // Create node
     nodes.push({
       id,
       value,
-      waxClass: WaxClass.forJsObject(value),
+      waxClass,
       x: 0, // Will be positioned by layout algorithm
       y: 0,
       level
     });
 
     // Process properties for objects and arrays
-    if (isObjectOrArray(value)) {
+    if (waxClass === jsObjectClass || waxClass === arrayClass) {
       const entries = getObjectEntries(value);
 
       for (const { key, value: propertyValue } of entries) {
@@ -174,72 +176,75 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
   return result;
 }
 
-// Cache for text width measurements to avoid repeated DOM operations
-const textWidthCache = new Map<string, number>();
-
-// Cache for WaxClass renderReact results
-const renderCache = new Map<string, React.ReactElement>();
-
 /**
- * Fast text width measurement using cached results
+ * Auto-sizing node component that measures its content
  */
-function measureTextWidth(text: string): number {
-  if (textWidthCache.has(text)) {
-    return textWidthCache.get(text)!;
-  }
+const AutoSizingNode = React.memo(({
+  node,
+  renderedValue
+}: {
+  node: GraphNode;
+  renderedValue: React.ReactElement | null;
+}) => {
+  const [contentSize, setContentSize] = useState({ width: 60, height: 30 });
+  const contentRef = useRef<HTMLDivElement>(null);
+  const foreignObjectRef = useRef<SVGForeignObjectElement>(null);
 
-  // Approximate text width calculation (faster than DOM measurement)
-  // This is a rough estimate but much faster than DOM manipulation
-  const avgCharWidth = 7; // Average character width for monospace-ish rendering
-  const measuredWidth = Math.min(Math.max(text.length * avgCharWidth + 20, 60), 200);
-
-  textWidthCache.set(text, measuredWidth);
-  return measuredWidth;
-}
-
-/**
- * Memoized WaxClass renderReact function
- */
-function getMemoizedRenderedValue(value: any, waxClass: WaxClass): React.ReactElement {
-  // Create cache key based on value type and actual value
-  const valueKey = `${waxClass.displayName}:${typeof value}:${String(value)}`;
-
-  if (renderCache.has(valueKey)) {
-    return renderCache.get(valueKey)!;
-  }
-
-  const rendered = waxClass.renderReact(value);
-  renderCache.set(valueKey, rendered);
-
-  // Limit cache size to prevent memory leaks
-  if (renderCache.size > 100) {
-    const firstKey = renderCache.keys().next().value;
-    if (firstKey !== undefined) {
-      renderCache.delete(firstKey);
+  // Measure actual content size after render
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      const { offsetWidth, offsetHeight } = contentRef.current;
+      setContentSize({
+        width: Math.max(60, offsetWidth), // 16px padding
+        height: Math.max(30, offsetHeight) // 8px padding
+      });
     }
-  }
+  }, [renderedValue]);
 
-  return rendered;
-}
+  const cornerRadius = 6;
+
+  return (
+    <g transform={`translate(${node.x}, ${node.y})`}>
+      {/* Background rectangle that auto-sizes to content */}
+      <rect
+        x={-contentSize.width / 2}
+        y={-contentSize.height / 2}
+        width={contentSize.width}
+        height={contentSize.height}
+        rx={cornerRadius}
+        ry={cornerRadius}
+        fill="var(--tw-prose-pre-bg)"
+        stroke="oklch(0.623 0.214 259.815)"
+        strokeWidth={2}
+      />
+      {/* Foreign object that contains the HTML content */}
+      <foreignObject
+        ref={foreignObjectRef}
+        x={-contentSize.width / 2}
+        y={-contentSize.height / 2}
+        width={contentSize.width}
+        height={contentSize.height}
+        className="pointer-events-none text-center"
+      >
+        <div
+          ref={contentRef}
+          className="inline-block"
+        >
+          {renderedValue}
+        </div>
+      </foreignObject>
+    </g>
+  );
+});
+
+AutoSizingNode.displayName = 'AutoSizingNode';
 
 /**
  * Memoized individual graph node component
  */
 const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
-  // Pre-calculate text width without DOM measurement
-  const textWidth = useMemo(() => {
-    if (!isJsPrimitive(node.value)) return 60;
-    return measureTextWidth(String(node.value));
-  }, [node.value]);
-
-  // Memoize the rendered value from WaxClass
-  const renderedValue = useMemo(() => {
-    if (!isJsPrimitive(node.value)) return null;
-    return getMemoizedRenderedValue(node.value, node.waxClass);
-  }, [node.value, node.waxClass]);
-
-  if (!isJsPrimitive(node.value)) {
-    // For non-primitive objects, use a simple circle
+  if (node.waxClass === jsObjectClass) {
+    // For plain ol' JS objects, use a simple circle
     return (
       <g transform={`translate(${node.x}, ${node.y})`}>
         <circle
@@ -251,40 +256,30 @@ const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
       </g>
     );
   }
+  if (node.waxClass === arrayClass) {
+    // For plain ol' JS objects, use a simple circle
+    return (
+      <g transform={`translate(${node.x - 10}, ${node.y - 10})`}>
+        <rect
+          width={20}
+          height={20}
+          rx={4}
+          ry={4}
+          fill="oklch(0.551 0.027 264.364)"
+          stroke="oklch(0.551 0.027 264.364)"
+          strokeWidth={2}
+        />
+      </g>
+    );
+  }
+  // Memoize the rendered value from WaxClass
+  const renderedValue = useMemo(() => {
+    return node.waxClass.renderReact(node.value);
+  }, [node.value, node.waxClass]);
 
-  // For primitive values, use a rectangle with rounded corners
-  const rectWidth = textWidth;
-  const rectHeight = 30;
-  const cornerRadius = 8;
 
-  return (
-    <g transform={`translate(${node.x}, ${node.y})`}>
-      {/* Background rectangle with rounded corners for node */}
-      <rect
-        x={-rectWidth / 2}
-        y={-rectHeight / 2}
-        width={rectWidth}
-        height={rectHeight}
-        rx={cornerRadius}
-        ry={cornerRadius}
-        fill="var(--tw-prose-pre-bg)"
-        stroke="oklch(0.623 0.214 259.815)"
-        strokeWidth={2}
-      />
-      {/* Foreign object for WaxClass content */}
-      <foreignObject
-        x={-rectWidth / 2}
-        y={-rectHeight / 2}
-        width={rectWidth}
-        height={rectHeight}
-        className="pointer-events-none"
-      >
-        <div className="text-xs text-center overflow-hidden whitespace-nowrap flex items-center justify-center h-full">
-          {renderedValue}
-        </div>
-      </foreignObject>
-    </g>
-  );
+  // For primitive values, use auto-sizing node
+  return <AutoSizingNode node={node} renderedValue={renderedValue} />;
 });
 
 GraphNodeComponent.displayName = 'GraphNodeComponent';
