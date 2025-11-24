@@ -29,7 +29,7 @@ const objectIds = new WeakMap();
 const primitiveIds = new Map<string, number>();
 export function getObjectId(value: any): string {
   const type = typeof value;
-  if (typeof value === 'object') {
+  if (type === 'object') {
     // Use WeakMap to maintain consistent IDs for object instances
     if (!objectIds.has(value)) {
       objectIds.set(value, `obj_${Math.random().toString(36).substr(2, 9)}`);
