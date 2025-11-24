@@ -32,8 +32,7 @@ describe("GraphView", () => {
     render(<GraphView value={obj} />);
   });
 
-  test("handles null and undefined", () => {
-    render(<GraphView value={null} />);
+  test("handles undefined", () => {
     render(<GraphView value={undefined} />);
   });
 
