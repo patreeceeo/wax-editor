@@ -138,7 +138,7 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
     return layoutCache.get(cacheKey)!;
   }
 
-  const levelHeight = Math.max(80, height / 6); // Max 6 levels, minimum 80px per level
+  const levelHeight = Math.max(160, height / 3); // Max 6 levels, minimum 80px per level
   const nodesByLevel = new Map<number, GraphNode[]>();
 
   // Group nodes by level
@@ -203,12 +203,15 @@ const AutoSizingNode = React.memo(({
 
   const cornerRadius = 6;
 
+  const x = -Math.min(20, contentSize.width) / 2;
+  const y = -Math.min(20, contentSize.height) / 2;
+
   return (
     <g transform={`translate(${node.x}, ${node.y})`}>
       {/* Background rectangle that auto-sizes to content */}
       <rect
-        x={-contentSize.width / 2}
-        y={-contentSize.height / 2}
+        x={x}
+        y={y}
         width={contentSize.width}
         height={contentSize.height}
         rx={cornerRadius}
@@ -220,8 +223,8 @@ const AutoSizingNode = React.memo(({
       {/* Foreign object that contains the HTML content */}
       <foreignObject
         ref={foreignObjectRef}
-        x={-contentSize.width / 2}
-        y={-contentSize.height / 2}
+        x={x}
+        y={y}
         width={contentSize.width}
         height={contentSize.height}
         className="pointer-events-none text-center"
