@@ -16,7 +16,7 @@ const colorMap = {
 } as const;
 
 export function ValueObject({ value, color }: Props) {
-  const className = `inline-flex ${colorMap[color]} font-bold`;
+  const className = `inline-flex ${colorMap[color]} font-bold whitespace-pre`;
   return <span className={className}>{value}</span>;
 }
 

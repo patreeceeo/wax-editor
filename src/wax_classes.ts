@@ -98,8 +98,9 @@ export const numberClass = new class extends WaxClass {
 
 export const procedureClass = new class extends WaxClass {
   displayName = "Procedure";
-  renderReact = thunkComponent("value", ProgramViewer)
-}
+  renderReact = thunkValueObject((proc: CompiledProcedure) => {
+    return {value: `<Procedure ${proc.id}>`, color: "blue" };
+  })}
 
 export const jsObjectClass = new class extends WaxClass {
   displayName = "JsObject";
