@@ -157,6 +157,7 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
         </Button>
       </div>
       <h3>Step Count: {stepCount}</h3>
+      <GraphView value={machines[machineIndex]} />
       <div className="flex space-x-4">
         <div>
           <h2>Instructions</h2>
@@ -182,7 +183,6 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
           </div>
         </div>
       </div>
-      <GraphView value={machines[machineIndex]} />
       <TreeView value={machines[machineIndex]} label='machine'/>
     </MachineProvider>
   )
