@@ -43,3 +43,28 @@ export function getObjectId(value: any): string {
     return `prim_${type}_${id}`;
   }
 }
+
+const _letterWidths: Record<string, number> = {}
+let _letterWidthsInitialized = false;
+function initLetterWidths() {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d')!;
+  context.font = getComputedStyle(document.body).font || '16px sans-serif';
+  const letters = '_-.!?<>(){}[] abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  for (const letter of letters) {
+    const metrics = context.measureText(letter);
+    _letterWidths[letter] = metrics.width;
+  }
+  _letterWidthsInitialized = true;
+}
+
+export function getTextWidth(text: string, size: number): number {
+  if (!_letterWidthsInitialized) {
+    initLetterWidths();
+  }
+  let width = 0;
+  for (const char of text) {
+    width += _letterWidths[char] || 8; // Default width for unknown chars
+  }
+  return width * (size / 16);
+}

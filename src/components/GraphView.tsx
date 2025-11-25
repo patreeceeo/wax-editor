@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { arrayClass, jsObjectClass, WaxClass } from '../wax_classes';
 import { isObjectOrArray } from '../utils';
-import { getObjectEntries, getObjectId } from './shared/DataVisualizationUtils';
+import { getObjectEntries, getObjectId, getTextWidth } from './shared/DataVisualizationUtils';
 
 export interface GraphNode {
   id: string;
@@ -296,12 +296,9 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdg
   const angle = Math.atan2(dy, dx);
   const midX = (sourceNode.x + targetNode.x) / 2;
   const midY = (sourceNode.y + targetNode.y) / 2;
-
-  // Calculate perpendicular offset for label positioning (above and to the left)
-  const perpendicularAngle = angle + Math.PI / 2; // 90 degrees perpendicular
-  const offsetDistance = 15; // Distance from the edge line
-  const labelX = midX + Math.cos(perpendicularAngle) * offsetDistance;
-  const labelY = midY + Math.sin(perpendicularAngle) * offsetDistance;
+  const text = String(edge.label);
+  const rectWidth = getTextWidth(text, 12) + 4;
+  const recHeight = 4;
 
   // Adjust angle to ensure text is always readable (not upside-down)
   let adjustedAngle = angle;
@@ -324,17 +321,25 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdg
         markerEnd="url(#arrowhead)"
       />
       {/* Edge label with rotation */}
+      <rect
+        transform={`rotate(${angleDegrees} ${midX} ${midY})`}
+        x={midX - rectWidth / 2}
+        y={midY - recHeight / 2}
+        fill="var(--tw-prose-pre-bg)"
+        width={rectWidth}
+        height={recHeight}
+      />
       <text
-        x={labelX}
-        y={labelY}
+        transform={`rotate(${angleDegrees} ${midX} ${midY})`}
+        x={midX}
+        y={midY}
         fontSize={12}
         fill="rgb(217, 119, 6)"
         textAnchor="middle"
         dominantBaseline="middle"
-        transform={`rotate(${angleDegrees} ${labelX} ${labelY})`}
         className="pointer-events-none"
       >
-        {String(edge.label)}
+        {text}
       </text>
     </g>
   );
