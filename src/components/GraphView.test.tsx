@@ -1,6 +1,16 @@
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { GraphView } from "./GraphView";
+
+vi.mock(import("./shared/DataVisualizationUtils.ts"), async (importOriginal) => {
+    const originalModule = await importOriginal<typeof import("./shared/DataVisualizationUtils.ts")>();
+    return {
+      ...originalModule,
+      getRenderingContextForFont: () => ({
+        measureText: (text: string) => ({ width: text.length * 8 }),
+      } as unknown as CanvasRenderingContext2D),
+    };
+});
 
 describe("GraphView", () => {
   test("renders without crashing", () => {

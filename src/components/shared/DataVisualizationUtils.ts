@@ -44,12 +44,18 @@ export function getObjectId(value: any): string {
   }
 }
 
+export function getRenderingContextForFont(font: string): CanvasRenderingContext2D {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d')!;
+  context.font = font;
+  return context;
+}
+
 const _letterWidths: Record<string, number> = {}
 let _letterWidthsInitialized = false;
 function initLetterWidths() {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d')!;
-  context.font = getComputedStyle(document.body).font || '16px sans-serif';
+  const font = getComputedStyle(document.body).font || '16px sans-serif';
+  const context = getRenderingContextForFont(font);
   const letters = '_-.!?<>(){}[] abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   for (const letter of letters) {
     const metrics = context.measureText(letter);
