@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { arrayClass, jsObjectClass, WaxClass } from '../wax_classes';
-import { isObjectOrArray } from '../utils';
+import { isObject, isObjectOrArray } from '../utils';
 import { getObjectEntries, getObjectId, getTextWidth } from './shared/DataVisualizationUtils';
 
 export interface GraphNode {
@@ -235,33 +235,18 @@ AutoSizingNode.displayName = 'AutoSizingNode';
  * Memoized individual graph node component
  */
 const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
-  if (node.waxClass === jsObjectClass) {
-    // For plain ol' JS objects, use a simple circle
+  if (node.waxClass === jsObjectClass || node.waxClass === arrayClass) {
+    const jsClassName = node.value.constructor ? node.value.constructor.name : isObject(node.value) ? 'Object' : '???';
     return (
-      <g transform={`translate(${node.x}, ${node.y})`}>
-        <circle
-          r={10}
-          fill="oklch(0.551 0.027 264.364)"
-          stroke="oklch(0.551 0.027 264.364)"
-          strokeWidth={2}
-        />
-      </g>
-    );
-  }
-  if (node.waxClass === arrayClass) {
-    // For plain ol' JS objects, use a simple circle
-    return (
-      <g transform={`translate(${node.x - 10}, ${node.y - 10})`}>
-        <rect
-          width={20}
-          height={20}
-          rx={4}
-          ry={4}
-          fill="oklch(0.551 0.027 264.364)"
-          stroke="oklch(0.551 0.027 264.364)"
-          strokeWidth={2}
-        />
-      </g>
+      <TextRect
+        x={node.x}
+        y={node.y}
+        padding={8}
+        text={jsClassName}
+        rectFill="var(--tw-prose-pre-bg)"
+        rectStroke="rgb(4, 120, 87)"
+        textFill="rgb(4, 120, 87)"
+      />
     );
   }
   // Memoize the rendered value from WaxClass
@@ -292,8 +277,6 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdg
   const midX = (sourceNode.x + targetNode.x) / 2;
   const midY = (sourceNode.y + targetNode.y) / 2;
   const text = String(edge.label);
-  const rectWidth = getTextWidth(text, 12) + 4;
-  const recHeight = 4;
 
   // Adjust angle to ensure text is always readable (not upside-down)
   let adjustedAngle = angle;
@@ -316,31 +299,64 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdg
         markerEnd="url(#arrowhead)"
       />
       {/* Edge label with rotation */}
-      <rect
-        transform={`rotate(${angleDegrees} ${midX} ${midY})`}
-        x={midX - rectWidth / 2}
-        y={midY - recHeight / 2}
-        fill="var(--tw-prose-pre-bg)"
-        width={rectWidth}
-        height={recHeight}
-      />
-      <text
-        transform={`rotate(${angleDegrees} ${midX} ${midY})`}
+      <TextRect
         x={midX}
         y={midY}
+        text={text}
+        transform={`rotate(${angleDegrees} ${midX} ${midY})`}
+        rectFill="var(--tw-prose-pre-bg)"
+        rectStroke="none"
+        textFill="rgb(217, 119, 6)"
+      />
+    </g>
+  );
+});
+
+GraphEdgeComponent.displayName = 'GraphEdgeComponent';
+
+
+interface TextRectProps {
+  x: number;
+  y: number;
+  text: string;
+  transform?: string;
+  rectFill: string;
+  rectStroke: string;
+  textFill: string;
+  padding?: number;
+}
+const TextRect = ({ x, y, text, transform, rectFill, rectStroke, textFill, padding = 0 }: TextRectProps) => {
+  const rectWidth = getTextWidth(text, 12) + padding * 2;
+  const rectHeight = 16 + padding * 2;
+  return (
+    <>
+      <rect
+        transform={transform}
+        x={x - rectWidth / 2}
+        y={y - rectHeight / 2}
+        width={rectWidth}
+        height={rectHeight}
+        fill={rectFill}
+        stroke={rectStroke}
+        strokeWidth={2}
+        rx={6}
+        ry={6}
+      />
+      <text
+        transform={transform}
+        x={x}
+        y={y}
         fontSize={12}
-        fill="rgb(217, 119, 6)"
+        fill={textFill}
         textAnchor="middle"
         dominantBaseline="middle"
         className="pointer-events-none"
       >
         {text}
       </text>
-    </g>
-  );
-});
-
-GraphEdgeComponent.displayName = 'GraphEdgeComponent';
+    </>
+  )
+}
 
 /**
  * Main GraphView component
