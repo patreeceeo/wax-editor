@@ -116,23 +116,12 @@ function objectToGraph(rootValue: any): GraphData {
   return graphData;
 }
 
-// Cache for layout calculations to avoid recomputation
-const layoutCache = new Map<string, GraphData>();
-
 /**
- * Simple hierarchical layout algorithm (cached)
+ * Simple circular layout algorithm (cached)
  */
 function hierarchicalLayout(graphData: GraphData, width: number, height: number): GraphData {
-  // Create cache key based on graph structure and dimensions
-  const nodeIds = graphData.nodes.map(n => n.id).sort().join(',');
-  const edgeIds = graphData.edges.map(e => e.id).sort().join(',');
-  const cacheKey = `${nodeIds}|${edgeIds}|${width}x${height}`;
-
-  if (layoutCache.has(cacheKey)) {
-    return layoutCache.get(cacheKey)!;
-  }
-
-  const levelHeight = Math.max(160, height / 3); // Max 6 levels, minimum 80px per level
+  const centerX = width / 2;
+  const centerY = height / 2;
   const nodesByLevel = new Map<number, GraphNode[]>();
 
   // Group nodes by level
@@ -143,31 +132,37 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
     nodesByLevel.get(node.level)!.push(node);
   }
 
+  const numberOfLevels = nodesByLevel.size;
+
   // Position nodes
   const positionedNodes = graphData.nodes.map(node => {
     const nodesInLevel = nodesByLevel.get(node.level)!;
     const levelIndex = nodesInLevel.indexOf(node);
-    const levelWidth = Math.max(100, width / (nodesInLevel.length + 1)); // Minimum 100px per node
+
+    if (node.level === 0) {
+      // Root node at center
+      return {
+        ...node,
+        x: centerX,
+        y: centerY
+      };
+    }
+
+    // Simple radius calculation - 100px per level
+    const radius = node.level * 100;
+
+    // Even distribution around circle
+    const angleStep = (2 * Math.PI) / nodesInLevel.length;
+    const angle = node.level * (2 * Math.PI / numberOfLevels) + levelIndex * angleStep;
 
     return {
       ...node,
-      x: levelWidth * (levelIndex - (nodesInLevel.length - 1) / 2),
-      y: 50 + node.level * levelHeight
+      x: centerX + radius * Math.cos(angle),
+      y: centerY + radius * Math.sin(angle)
     };
   });
 
-  const result = { ...graphData, nodes: positionedNodes };
-  layoutCache.set(cacheKey, result);
-
-  // Limit cache size to prevent memory leaks
-  if (layoutCache.size > 50) {
-    const firstKey = layoutCache.keys().next().value;
-    if (firstKey !== undefined) {
-      layoutCache.delete(firstKey);
-    }
-  }
-
-  return result;
+  return { ...graphData, nodes: positionedNodes };
 }
 
 /**
