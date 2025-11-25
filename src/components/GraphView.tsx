@@ -117,7 +117,7 @@ function objectToGraph(rootValue: any): GraphData {
 }
 
 /**
- * Simple circular layout algorithm (cached)
+ * Simple circular layout algorithm
  */
 function hierarchicalLayout(graphData: GraphData, width: number, height: number): GraphData {
   const centerX = width / 2;
