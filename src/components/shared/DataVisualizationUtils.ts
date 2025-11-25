@@ -26,13 +26,14 @@ export function getObjectEntries(value: any): ObjectEntry[] {
  * Generate a unique identifier for object instances in graphs
  */
 const objectIds = new WeakMap();
+let nextObjectId = 0;
 const primitiveIds = new Map<string, number>();
 export function getObjectId(value: any): string {
   const type = typeof value;
   if (type === 'object') {
     // Use WeakMap to maintain consistent IDs for object instances
     if (!objectIds.has(value)) {
-      objectIds.set(value, `obj_${Math.random().toString(36).substr(2, 9)}`);
+      objectIds.set(value, `obj_${nextObjectId++}`);
     }
     return objectIds.get(value)!;
   } else {
