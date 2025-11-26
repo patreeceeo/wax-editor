@@ -5,7 +5,6 @@ import JsonDiff from './JsonDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
 import Button from './Button';
 import ProgramViewer from './ProgramViewer';
-import {TreeView} from './TreeView';
 import {GraphView} from './GraphView';
 
 interface DebuggerProps {
@@ -183,7 +182,6 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
           </div>
         </div>
       </div>
-      <TreeView value={machines[machineIndex]} label='machine'/>
     </MachineProvider>
   )
 }

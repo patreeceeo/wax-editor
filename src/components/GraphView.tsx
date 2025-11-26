@@ -1,12 +1,12 @@
 import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
-import { arrayClass, jsObjectClass, WaxClass } from '../wax_classes';
-import { isObject, isObjectOrArray } from '../utils';
-import { getObjectEntries, getObjectId, getTextWidth } from './shared/DataVisualizationUtils';
+import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
+import { getObjectId, isObjectOrArray } from '../utils';
+import { getObjectEntries, getTextWidth } from './shared/DataVisualizationUtils';
 
 export interface GraphNode {
   id: string;
   value: any;
-  waxClass: WaxClass;
+  waxClass: WaxClass<any>;
   x: number;
   y: number;
   level: number; // Hierarchical level for layout
@@ -31,6 +31,8 @@ interface GraphViewProps {
 // Cache for graph data transformation to avoid recomputation
 const graphDataCache = new Map<string, GraphData>();
 const graphDataWeakCache = new WeakMap<object, GraphData>();
+
+const LEAF_CLASSES = [stringClass, numberClass, trueClass, falseClass, nilClass, procedureClass];
 
 /**
  * Transform a JavaScript object into a graph structure (cached)
@@ -75,8 +77,8 @@ function objectToGraph(rootValue: any): GraphData {
       level
     });
 
-    // Process properties for objects and arrays
-    if (waxClass === jsObjectClass || waxClass === arrayClass) {
+    // If not a leaf node, enqueue its properties
+    if (!LEAF_CLASSES.includes(waxClass)) {
       const entries = getObjectEntries(value);
 
       for (const { key, value: propertyValue } of entries) {
@@ -166,94 +168,24 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
 }
 
 /**
- * Auto-sizing node component that measures its content
- */
-const AutoSizingNode = React.memo(({
-  node,
-  renderedValue
-}: {
-  node: GraphNode;
-  renderedValue: React.ReactElement | null;
-}) => {
-  const [contentSize, setContentSize] = useState({ width: 60, height: 30 });
-  const contentRef = useRef<HTMLDivElement>(null);
-  const foreignObjectRef = useRef<SVGForeignObjectElement>(null);
-
-  // Measure actual content size after render
-  useLayoutEffect(() => {
-    if (contentRef.current) {
-      const { offsetWidth, offsetHeight } = contentRef.current;
-      setContentSize({
-        width: Math.max(60, offsetWidth), // 16px padding
-        height: Math.max(30, offsetHeight) // 8px padding
-      });
-    }
-  }, [renderedValue]);
-
-  const cornerRadius = 6;
-
-  const x = -Math.min(20, contentSize.width) / 2;
-  const y = -Math.min(20, contentSize.height) / 2;
-
-  return (
-    <g transform={`translate(${node.x}, ${node.y})`}>
-      {/* Background rectangle that auto-sizes to content */}
-      <rect
-        x={x}
-        y={y}
-        width={contentSize.width}
-        height={contentSize.height}
-        rx={cornerRadius}
-        ry={cornerRadius}
-        fill="var(--tw-prose-pre-bg)"
-        stroke="oklch(0.623 0.214 259.815)"
-        strokeWidth={2}
-      />
-      {/* Foreign object that contains the HTML content */}
-      <foreignObject
-        ref={foreignObjectRef}
-        x={x}
-        y={y}
-        width={contentSize.width}
-        height={contentSize.height}
-        className="pointer-events-none text-center"
-      >
-        <div
-          ref={contentRef}
-          className="inline-block"
-        >
-          {renderedValue}
-        </div>
-      </foreignObject>
-    </g>
-  );
-});
-
-AutoSizingNode.displayName = 'AutoSizingNode';
-
-/**
  * Memoized individual graph node component
  */
 const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
-  if (node.waxClass === jsObjectClass || node.waxClass === arrayClass) {
-    const jsClassName = node.value.constructor ? node.value.constructor.name : isObject(node.value) ? 'Object' : '???';
-    return (
-      <TextRect
-        x={node.x}
-        y={node.y}
-        padding={8}
-        text={jsClassName}
-        rectFill="var(--tw-prose-pre-bg)"
-        rectStroke="rgb(4, 120, 87)"
-        textFill="rgb(4, 120, 87)"
-      />
-    );
-  }
+  const text = WaxClass.isValueClass(node.waxClass)
+    ? node.waxClass.stringify(node.value)
+    : `${node.waxClass.displayName} #${getObjectId(node.value)}`
 
-  const renderedValue = node.waxClass.renderReact(node.value);
-
-  // For primitive values, use auto-sizing node
-  return <AutoSizingNode node={node} renderedValue={renderedValue} />;
+  return (
+    <TextRect
+      x={node.x}
+      y={node.y}
+      padding={8}
+      text={text}
+      rectFill="var(--tw-prose-pre-bg)"
+      rectStroke="rgb(4, 120, 87)"
+      textFill={node.waxClass.displayColor}
+    />
+  )
 });
 
 GraphNodeComponent.displayName = 'GraphNodeComponent';

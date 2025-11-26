@@ -1,6 +1,6 @@
 import { CompiledProcedure, type CompiledInstruction } from '../compiled_procedure';
+import {WaxClass} from '../wax_classes';
 import { useMachine } from './MachineContext';
-import {TreeView} from './TreeView';
 import cx from "classnames";
 
 interface ProgramViewerProps {
@@ -73,5 +73,6 @@ function Instruction({instruction, lineNumber, totalDigits, isCurrent, isPreviou
 
 
 function InstructionArg({ arg }: { arg: any }) {
-  return <TreeView value={arg} inline />;
+  const waxClass = WaxClass.forJsObject(arg)
+  return waxClass.renderReact(arg)
 }

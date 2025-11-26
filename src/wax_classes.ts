@@ -1,23 +1,20 @@
 import {CompiledProcedure} from "./compiled_procedure";
-import {thunkComponent} from "./components/helpers";
-import {TreeViewEntries} from "./components/TreeView";
 import { thunkValueObject } from "./components/ValueObject";
+import {invariant} from "./error";
 
 interface WaxClassInit {
   methods?: {[key: string]: CompiledProcedure};
 }
 
-export class WaxClass {
-  displayName = "Unknown";
-  static isValueClass(waxClass: WaxClass): boolean {
+export class WaxClass<T> {
+  static isValueClass(waxClass: WaxClass<any>): boolean {
     return waxClass === nilClass ||
       waxClass === trueClass ||
       waxClass === falseClass ||
       waxClass === numberClass ||
-      waxClass === stringClass ||
-      waxClass === jsFunctionClass;
+      waxClass === stringClass
   }
-  static forJsObject(value: any): WaxClass {
+  static forJsObject(value: any): WaxClass<any> {
     if (value === true) {
       return trueClass;
     }
@@ -30,8 +27,6 @@ export class WaxClass {
     switch(typeof value) {
       case "string":
         return stringClass;
-      case "function":
-        return jsFunctionClass;
       case "symbol":
         return symbolClass;
       case "number":
@@ -43,8 +38,24 @@ export class WaxClass {
         if(Array.isArray(value)) {
           return arrayClass;
         }
+        if(value.constructor === undefined) {
+          return objectClass;
+        }
     }
-    return jsObjectClass;
+    return WaxClass.getJsWrapper(value);
+  }
+
+  private static _wrappersByConstructor = new Map<Function, WaxClass<any>>();
+  static getJsWrapper(value: any): WaxClass<any> {
+    const constructor = value.constructor;
+    invariant(constructor !== undefined, "Cannot get JS wrapper for object with no constructor.");
+    let wrapper = this._wrappersByConstructor.get(constructor);
+    if(wrapper === undefined) {
+      wrapper = new WaxClass();
+      wrapper.displayName = `Js::${constructor.name}`;
+      this._wrappersByConstructor.set(constructor, wrapper);
+    }
+    return wrapper;
   }
 
   private _methods: {[key: string]: CompiledProcedure};
@@ -61,71 +72,84 @@ export class WaxClass {
     return this;
   }
 
+  displayName = "Unknown";
+  displayColor = "var(--color-blue-600)";
+
+  stringify(value: T): string {
+    return String(value);
+  }
+
   renderReact = thunkValueObject(((value: any) => {
-    return {value: String(value), color: "gray" };
+    return {value: this.stringify(value), color: this.displayColor };
   }));
 }
 
 
-export const nilClass = new class extends WaxClass {
+export const nilClass = new class extends WaxClass<undefined> {
   displayName = "Nil";
-  renderReact = thunkValueObject((() => {
-    return {value: "nil", color: "pink" };
-  }))
+  displayColor = "var(--color-pink-600)";
+  stringify() {
+    return "nil";
+  }
 }
 
-export const trueClass = new class extends WaxClass {
+export const trueClass = new class extends WaxClass<true> {
   displayName = "True";
-  renderReact = thunkValueObject((() => {
-    return {value: "true", color: "green" };
-  }))
+  displayColor = "var(--color-green-600)";
+  stringify() {
+    return "true";
+  }
 }
 
-export const falseClass = new class extends WaxClass {
+export const falseClass = new class extends WaxClass<false> {
   displayName = "False";
-  renderReact = thunkValueObject((() => {
-    return {value: "false", color: "red" };
-  }))
+  displayColor = "var(--color-red-600)";
+  stringify() {
+    return "false";
+  }
 }
 
-export const numberClass = new class extends WaxClass {
+export const numberClass = new class extends WaxClass<number> {
   displayName = "Number";
-  renderReact = thunkValueObject((jsValue: number) => {
-    return {value: String(jsValue), color: "blue" };
-  })
+  displayColor = "var(--color-yellow-600)";
+  stringify(value: number) {
+    return value.toString();
+  }
 }
 
-export const procedureClass = new class extends WaxClass {
+export const procedureClass = new class extends WaxClass<CompiledProcedure> {
   displayName = "Procedure";
-  renderReact = thunkValueObject((proc: CompiledProcedure) => {
-    return {value: `<Procedure ${proc.id}>`, color: "blue" };
-  })}
-
-export const jsObjectClass = new class extends WaxClass {
-  displayName = "JsObject";
-  renderReact = thunkComponent("value", TreeViewEntries)
+  displayColor = "var(--color-purple-600)";
+  stringify(value: CompiledProcedure) {
+    return `⁋ ${value.id.toString()}`;
+  }
 }
 
-export const arrayClass = new class extends WaxClass {
+export const objectClass = new class extends WaxClass<Record<string, any>> {
+  displayName = "Js::Object";
+  displayColor = "var(--color-blue-600)";
+  stringify(value: Record<string, any>) {
+    return JSON.stringify(value);
+  }
+}
+
+export const arrayClass = new class extends WaxClass<any[]> {
   displayName = "Array";
-  renderReact = thunkComponent("value", TreeViewEntries)
+  displayColor = "var(--color-teal-600)";
+  stringify(value: any[]) {
+    return JSON.stringify(value);
+  }
 }
 
-export const stringClass = new class extends WaxClass {
+export const stringClass = new class extends WaxClass<string> {
   displayName = "String";
-  renderReact = thunkValueObject((jsValue: string) => {
-    return {value: `“${jsValue}”`, color: "yellow" };
-  })
+  displayColor = "var(--color-orange-600)";
+  stringify(jsValue: string) {
+    return `“${jsValue}”`;
+  }
 }
 
 export const symbolClass = new WaxClass();
 
-export const jsFunctionClass = new class extends WaxClass {
-  displayName = "JsFunction";
-  renderReact = thunkValueObject((jsValue: Function) => {
-    const name = jsValue.name || "(anonymous)";
-    return {value: `function ${name}()`, color: "purple" };
-  })
-}
 
 
