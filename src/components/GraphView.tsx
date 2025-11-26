@@ -170,21 +170,23 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
 /**
  * Memoized individual graph node component
  */
-const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
+const GraphNodeComponent = React.memo(({ node, onClick, isTop = false }: { node: GraphNode; onClick?: () => void; isTop?: boolean }) => {
   const text = WaxClass.isValueClass(node.waxClass)
     ? node.waxClass.stringify(node.value)
     : `${node.waxClass.displayName} #${getObjectId(node.value)}`
 
   return (
-    <TextRect
-      x={node.x}
-      y={node.y}
-      padding={8}
-      text={text}
-      rectFill="var(--tw-prose-pre-bg)"
-      rectStroke="rgb(4, 120, 87)"
-      textFill={node.waxClass.displayColor}
-    />
+    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+      <TextRect
+        x={node.x}
+        y={node.y}
+        padding={8}
+        text={text}
+        rectFill="var(--tw-prose-pre-bg)"
+        rectStroke={isTop ? "white" : "rgb(4, 120, 87)"}
+        textFill={node.waxClass.displayColor}
+      />
+    </g>
   )
 });
 
@@ -193,7 +195,7 @@ GraphNodeComponent.displayName = 'GraphNodeComponent';
 /**
  * Memoized individual graph edge component
  */
-const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdge; nodeLookupMap: Map<string, GraphNode> }) => {
+const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap, isTop = false}: { edge: GraphEdge; nodeLookupMap: Map<string, GraphNode>, isTop?: boolean}) => {
   const sourceNode = nodeLookupMap.get(edge.source);
   const targetNode = nodeLookupMap.get(edge.target);
 
@@ -223,7 +225,7 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap }: { edge: GraphEdg
         y1={sourceNode.y}
         x2={targetNode.x}
         y2={targetNode.y}
-        stroke="rgb(4, 120, 87)"
+        stroke={isTop ? "white" : "rgb(4, 120, 87)"}
         strokeWidth={2}
         markerEnd="url(#arrowhead)"
       />
@@ -298,6 +300,7 @@ export function GraphView({ value }: GraphViewProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [topNodeId, setTopNodeId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -342,6 +345,52 @@ export function GraphView({ value }: GraphViewProps) {
 
     return { graphData: layoutData, nodeLookupMap: lookupMap };
   }, [value, dimensions]);
+
+  // Filter nodes and edges into regular and top layers
+  const { regularNodes, topNodes, regularEdges, topEdges } = useMemo(() => {
+    if (!topNodeId) {
+      return {
+        regularNodes: graphData.nodes,
+        topNodes: [],
+        regularEdges: graphData.edges,
+        topEdges: []
+      };
+    }
+
+    // Get the selected node
+    const selectedNode = graphData.nodes.find(node => node.id === topNodeId);
+    if (!selectedNode) {
+      return {
+        regularNodes: graphData.nodes,
+        topNodes: [],
+        regularEdges: graphData.edges,
+        topEdges: []
+      };
+    }
+
+    // Find all directly connected node IDs
+    const connectedNodeIds = new Set<string>([topNodeId]);
+    const topEdgeIds = new Set<string>();
+
+    graphData.edges.forEach(edge => {
+      if (edge.source === topNodeId || edge.target === topNodeId) {
+        topEdgeIds.add(edge.id);
+        // Add the other connected node
+        if (edge.source === topNodeId) {
+          connectedNodeIds.add(edge.target);
+        } else {
+          connectedNodeIds.add(edge.source);
+        }
+      }
+    });
+
+    const topNodes = graphData.nodes.filter(node => connectedNodeIds.has(node.id));
+    const regularNodes = graphData.nodes.filter(node => !connectedNodeIds.has(node.id));
+    const topEdges = graphData.edges.filter(edge => topEdgeIds.has(edge.id));
+    const regularEdges = graphData.edges.filter(edge => !topEdgeIds.has(edge.id));
+
+    return { regularNodes, topNodes, regularEdges, topEdges };
+  }, [graphData, topNodeId]);
 
   // Add non-passive wheel event listener for zoom
   useEffect(() => {
@@ -421,20 +470,39 @@ export function GraphView({ value }: GraphViewProps) {
           >
             <polygon
               points="0 0, 10 3.5, 0 7"
-              fill="rgb(4, 120, 87)"
+              fill="context-stroke"
             />
           </marker>
         </defs>
 
         <g transform={`translate(${translateX}, ${translateY}) scale(${scale})`}>
-          {/* Render edges first (behind nodes) */}
-          {graphData.edges.map(edge => (
+          {/* Regular edges (bottom layer) */}
+          {regularEdges.map(edge => (
             <GraphEdgeComponent key={edge.id} edge={edge} nodeLookupMap={nodeLookupMap} />
           ))}
 
-          {/* Render nodes */}
-          {graphData.nodes.map(node => (
-            <GraphNodeComponent key={node.id} node={node} />
+          {/* Regular nodes */}
+          {regularNodes.map(node => (
+            <GraphNodeComponent
+              key={node.id}
+              node={node}
+              onClick={() => setTopNodeId(node.id)}
+            />
+          ))}
+
+          {/* Top node edges (middle layer) */}
+          {topEdges.map(edge => (
+            <GraphEdgeComponent key={edge.id} edge={edge} nodeLookupMap={nodeLookupMap} isTop />
+          ))}
+
+          {/* Top nodes (top layer) */}
+          {topNodes.map(node => (
+            <GraphNodeComponent
+              key={node.id}
+              node={node}
+              onClick={() => setTopNodeId(node.id === topNodeId ? null : node.id)}
+              isTop
+            />
           ))}
         </g>
       </svg>
