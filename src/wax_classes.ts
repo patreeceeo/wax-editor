@@ -1,6 +1,5 @@
 import {CompiledProcedure} from "./compiled_procedure";
 import {thunkComponent} from "./components/helpers";
-import ProgramViewer from "./components/ProgramViewer";
 import {TreeViewEntries} from "./components/TreeView";
 import { thunkValueObject } from "./components/ValueObject";
 
