@@ -138,6 +138,11 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
 
   // Position nodes
   const positionedNodes = graphData.nodes.map(node => {
+    // Skip nodes that already have positions (were manually moved)
+    if (node.x !== 0 || node.y !== 0) {
+      return node;
+    }
+
     const nodesInLevel = nodesByLevel.get(node.level)!;
     const levelIndex = nodesInLevel.indexOf(node);
 
@@ -170,13 +175,24 @@ function hierarchicalLayout(graphData: GraphData, width: number, height: number)
 /**
  * Memoized individual graph node component
  */
-const GraphNodeComponent = React.memo(({ node, onClick, isTop = false }: { node: GraphNode; onClick?: () => void; isTop?: boolean }) => {
+const GraphNodeComponent = React.memo(({
+  node,
+  isTop = false,
+  onMouseDown
+}: {
+  node: GraphNode;
+  isTop?: boolean;
+  onMouseDown: (nodeId: string, event: React.MouseEvent) => void;
+}) => {
   const text = WaxClass.isValueClass(node.waxClass)
     ? node.waxClass.stringify(node.value)
     : `${node.waxClass.displayName} #${getObjectId(node.value)}`
 
   return (
-    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+    <g
+      onMouseDown={(e) => onMouseDown(node.id, e)}
+      className='cursor-move'
+    >
       <TextRect
         x={node.x}
         y={node.y}
@@ -296,11 +312,14 @@ export function GraphView({ value }: GraphViewProps) {
   const [scale, setScale] = useState(1);
   const [translateX, setTranslateX] = useState(0);
   const [translateY, setTranslateY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [topNodeId, setTopNodeId] = useState<string | null>(null);
+  const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
+  const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -332,18 +351,20 @@ export function GraphView({ value }: GraphViewProps) {
     };
   }, []);
 
-  // Transform object to graph structure and create lookup map
-  const { graphData, nodeLookupMap } = useMemo(() => {
-    const data = objectToGraph(value);
-    const layoutData = hierarchicalLayout(data, dimensions.width, dimensions.height);
-
-    // Create node lookup map for O(1) access
+  // Create node lookup map from graph data
+  const nodeLookupMap = useMemo(() => {
     const lookupMap = new Map<string, GraphNode>();
-    for (const node of layoutData.nodes) {
+    for (const node of graphData.nodes) {
       lookupMap.set(node.id, node);
     }
+    return lookupMap;
+  }, [graphData]);
 
-    return { graphData: layoutData, nodeLookupMap: lookupMap };
+  // Update graph data when value changes
+  useEffect(() => {
+    const data = objectToGraph(value);
+    const layoutData = hierarchicalLayout(data, dimensions.width, dimensions.height);
+    setGraphData(layoutData);
   }, [value, dimensions]);
 
   // Filter nodes and edges into regular and top layers
@@ -412,30 +433,83 @@ export function GraphView({ value }: GraphViewProps) {
 
   // Handle pan start
   const handleMouseDown = (event: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: event.clientX, y: event.clientY });
-    setDragOffset({ x: translateX, y: translateY });
+    setIsPanning(true);
+    setPanStart({ x: event.clientX, y: event.clientY });
+    setPanOffset({ x: translateX, y: translateY });
   };
 
-  // Handle pan move
+  // Handle mouse move for both pan and node drag
   const handleMouseMove = (event: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (isPanning) {
+      const deltaX = event.clientX - panStart.x;
+      const deltaY = event.clientY - panStart.y;
 
-    const deltaX = event.clientX - dragStart.x;
-    const deltaY = event.clientY - dragStart.y;
+      setTranslateX(panOffset.x + deltaX);
+      setTranslateY(panOffset.y + deltaY);
+    }
 
-    setTranslateX(dragOffset.x + deltaX);
-    setTranslateY(dragOffset.y + deltaY);
+    if (isDraggingNode) {
+      // Convert mouse position to graph space
+      const svgElement = svgRef.current;
+      if (!svgElement) return;
+
+      const pt = svgElement.createSVGPoint();
+      pt.x = event.clientX;
+      pt.y = event.clientY;
+      const svgP = pt.matrixTransform(svgElement.getScreenCTM()?.inverse());
+
+      const graphX = (svgP.x - translateX) / scale;
+      const graphY = (svgP.y - translateY) / scale;
+
+      // Update node position
+      setGraphData(prevData => ({
+        ...prevData,
+        nodes: prevData.nodes.map(node =>
+          node.id === isDraggingNode
+            ? { ...node, x: graphX + nodeDragOffset.x, y: graphY + nodeDragOffset.y }
+            : node
+        )
+      }));
+    }
   };
 
-  // Handle pan end
+  // Handle mouse up for both pan and node drag
   const handleMouseUp = () => {
-    setIsDragging(false);
+    setIsPanning(false);
+    setIsDraggingNode(null);
   };
 
   // Handle mouse leave to stop dragging
   const handleMouseLeave = () => {
-    setIsDragging(false);
+    setIsPanning(false);
+    setIsDraggingNode(null);
+  };
+
+  // Handle node drag start
+  const handleNodeMouseDown = (nodeId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent panning
+
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    const node = nodeLookupMap.get(nodeId);
+    if (!node) return;
+
+    const pt = svgElement.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    const svgP = pt.matrixTransform(svgElement.getScreenCTM()?.inverse());
+
+    const graphX = (svgP.x - translateX) / scale;
+    const graphY = (svgP.y - translateY) / scale;
+
+    setIsDraggingNode(nodeId);
+    setNodeDragOffset({
+      x: node.x - graphX,
+      y: node.y - graphY
+    });
+
+    setTopNodeId(nodeId);
   };
 
   return (
@@ -452,7 +526,7 @@ export function GraphView({ value }: GraphViewProps) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        className={isDragging ? "cursor-grabbing" : "cursor-grab"}
+        className={isPanning ? "cursor-grabbing" : "cursor-grab"}
         style={{
           width: '100%',
           height: '100%',
@@ -486,7 +560,7 @@ export function GraphView({ value }: GraphViewProps) {
             <GraphNodeComponent
               key={node.id}
               node={node}
-              onClick={() => setTopNodeId(node.id)}
+              onMouseDown={handleNodeMouseDown}
             />
           ))}
 
@@ -500,8 +574,8 @@ export function GraphView({ value }: GraphViewProps) {
             <GraphNodeComponent
               key={node.id}
               node={node}
-              onClick={() => setTopNodeId(node.id === topNodeId ? null : node.id)}
               isTop
+              onMouseDown={handleNodeMouseDown}
             />
           ))}
         </g>
