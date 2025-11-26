@@ -250,10 +250,7 @@ const GraphNodeComponent = React.memo(({ node }: { node: GraphNode }) => {
     );
   }
   // Memoize the rendered value from WaxClass
-  const renderedValue = useMemo(() => {
-    return node.waxClass.renderReact(node.value);
-  }, [node.value, node.waxClass]);
-
+  const renderedValue = node.waxClass.renderReact(node.value);
 
   // For primitive values, use auto-sizing node
   return <AutoSizingNode node={node} renderedValue={renderedValue} />;
