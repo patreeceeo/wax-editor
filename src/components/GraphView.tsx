@@ -464,9 +464,46 @@ export function GraphView({ value }: GraphViewProps) {
     }
 
     if (isDraggingNode) {
-      // Convert mouse position to graph space
+      // Get mouse position relative to SVG bounds
       const svgElement = svgRef.current;
       if (!svgElement) return;
+
+      const svgRect = svgElement.getBoundingClientRect();
+      const relativeX = event.clientX - svgRect.left;
+      const relativeY = event.clientY - svgRect.top;
+
+      // Auto-pan when dragging near edges
+      const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
+      const distanceFromEdge = Math.min(
+        relativeX,
+        relativeY,
+        Math.abs(svgRect.width - relativeX),
+        Math.abs(svgRect.height - relativeY)
+      );
+      const panSpeed = (edgeThreshold - distanceFromEdge) ** 2 / 200; // Pixels to pan per frame
+
+      let panX = 0;
+      let panY = 0;
+
+      if (relativeX < edgeThreshold) {
+        panX = panSpeed;
+      } else if (relativeX > svgRect.width - edgeThreshold) {
+        panX = -panSpeed;
+      }
+
+      if (relativeY < edgeThreshold) {
+        panY = panSpeed;
+      } else if (relativeY > svgRect.height - edgeThreshold) {
+        panY = -panSpeed;
+      }
+
+      // Apply auto-pan if needed
+      if (panX !== 0 || panY !== 0) {
+        setTranslateX(prev => prev + panX);
+        setTranslateY(prev => prev + panY);
+      }
+
+      // Convert mouse position to graph space
 
       const pt = svgElement.createSVGPoint();
       pt.x = event.clientX;
