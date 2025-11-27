@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
 import { getObjectId, isObjectOrArray } from '../utils';
-import { getObjectEntries, getTextWidth } from './shared/DataVisualizationUtils';
+import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 
 export interface GraphNode {
   id: string;
@@ -217,12 +217,27 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap, isTop = false}: { 
 
   if (!sourceNode || !targetNode) return null;
 
-  // Calculate edge properties
-  const dx = targetNode.x - sourceNode.x;
-  const dy = targetNode.y - sourceNode.y;
+  // Calculate target node dimensions
+  const targetText = WaxClass.isValueClass(targetNode.waxClass)
+    ? targetNode.waxClass.stringify(targetNode.value)
+    : `${targetNode.waxClass.displayName} #${getObjectId(targetNode.value)}`;
+
+  const targetDimensions = getTextDimensions(targetText, 12);
+
+  // Calculate where the line should intersect with target node rectangle
+  const intersection = getLineRectangleIntersection(
+    sourceNode.x, sourceNode.y,
+    targetNode.x, targetNode.y,
+    targetNode.x, targetNode.y,
+    targetDimensions.width, targetDimensions.height
+  );
+
+  // Calculate edge properties using intersection point
+  const dx = intersection.x - sourceNode.x;
+  const dy = intersection.y - sourceNode.y;
   const angle = Math.atan2(dy, dx);
-  const midX = (sourceNode.x + targetNode.x) / 2;
-  const midY = (sourceNode.y + targetNode.y) / 2;
+  const midX = (sourceNode.x + intersection.x) / 2;
+  const midY = (sourceNode.y + intersection.y) / 2;
   const text = String(edge.label);
 
   // Adjust angle to ensure text is always readable (not upside-down)
@@ -239,8 +254,8 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap, isTop = false}: { 
       <line
         x1={sourceNode.x}
         y1={sourceNode.y}
-        x2={targetNode.x}
-        y2={targetNode.y}
+        x2={intersection.x}
+        y2={intersection.y}
         stroke={isTop ? "white" : "rgb(4, 120, 87)"}
         strokeWidth={2}
         markerEnd="url(#arrowhead)"
@@ -273,8 +288,7 @@ interface TextRectProps {
   padding?: number;
 }
 const TextRect = ({ x, y, text, transform, rectFill, rectStroke, textFill, padding = 0 }: TextRectProps) => {
-  const rectWidth = getTextWidth(text, 12) + padding * 2;
-  const rectHeight = 16 + padding * 2;
+  const { width: rectWidth, height: rectHeight } = getTextDimensions(text, padding);
   return (
     <>
       <rect
@@ -538,7 +552,7 @@ export function GraphView({ value }: GraphViewProps) {
             id="arrowhead"
             markerWidth="10"
             markerHeight="7"
-            refX="15"
+            refX="7"
             refY="3.5"
             orient="auto"
           >
