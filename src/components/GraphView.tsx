@@ -502,26 +502,30 @@ export function GraphView({ value }: GraphViewProps) {
     };
   };
 
+  const getPanVelocity = (distance: number, start: number) => {
+    return distance ** 2 / (Math.abs(start) * 8 + 400);
+  }
+
   // Calculate auto-pan velocity based on mouse position
   const getAutoPanVelocity = (mousePos: { x: number; y: number; width: number; height: number }) => {
-    const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
+    const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.44;
     let panX = 0;
     let panY = 0;
 
     if (mousePos.x < edgeThreshold) {
       const distance = edgeThreshold - mousePos.x;
-      panX = (distance ** 2) / 200;
+      panX = getPanVelocity(distance, mousePos.x);
     } else if (mousePos.x > mousePos.width - edgeThreshold) {
       const distance = mousePos.x - (mousePos.width - edgeThreshold);
-      panX = -(distance ** 2) / 200;
+      panX = -getPanVelocity(distance, mousePos.x);
     }
 
     if (mousePos.y < edgeThreshold) {
       const distance = edgeThreshold - mousePos.y;
-      panY = (distance ** 2) / 200;
+      panY = getPanVelocity(distance, mousePos.y);
     } else if (mousePos.y > mousePos.height - edgeThreshold) {
       const distance = mousePos.y - (mousePos.height - edgeThreshold);
-      panY = -(distance ** 2) / 200;
+      panY = -getPanVelocity(distance, mousePos.y);
     }
 
     return { x: panX, y: panY };
@@ -557,7 +561,7 @@ export function GraphView({ value }: GraphViewProps) {
       if (!mousePos) return;
 
       // Calculate auto-pan velocity
-      const panVelocity = getAutoPanVelocity(mousePos);
+      const panVelocity = getAutoPanVelocity(mousePos, event);
       panVelocityRef.current = panVelocity;
 
       // Convert to graph space and calculate node velocity
