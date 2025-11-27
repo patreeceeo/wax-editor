@@ -339,7 +339,8 @@ export function GraphView({ value }: GraphViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const panVelocityRef = useRef({ x: 0, y: 0 });
-  const draggedNodeTargetRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
+  const draggedNodeVelocityRef = useRef<{ nodeId: string | null; vx: number; vy: number }>({ nodeId: null, vx: 0, vy: 0 });
+  const previousMouseGraphPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -389,15 +390,14 @@ export function GraphView({ value }: GraphViewProps) {
       needsAnimation = true;
     }
 
-    // Apply node dragging
-    const { nodeId, x, y } = draggedNodeTargetRef.current;
-
-    if (nodeId) {
+    // Apply node dragging velocity
+    const { nodeId, vx, vy } = draggedNodeVelocityRef.current;
+    if (nodeId && (vx !== 0 || vy !== 0)) {
       setGraphData(prevData => ({
         ...prevData,
         nodes: prevData.nodes.map(node =>
           node.id === nodeId
-            ? { ...node, x, y }
+            ? { ...node, x: node.x + vx, y: node.y + vy }
             : node
         )
       }));
@@ -558,19 +558,32 @@ export function GraphView({ value }: GraphViewProps) {
       if (!mousePos) return;
 
       // Calculate auto-pan velocity
-      const velocity = getAutoPanVelocity(mousePos);
-      panVelocityRef.current = velocity;
+      const panVelocity = getAutoPanVelocity(mousePos);
+      panVelocityRef.current = panVelocity;
 
-      // Convert to graph space and set node target position
+      // Convert to graph space and calculate node velocity
       const graphPos = screenToGraphSpace(event.clientX, event.clientY);
-      draggedNodeTargetRef.current = {
-        nodeId: isDraggingNode,
-        x: graphPos.x + nodeDragOffset.x,
-        y: graphPos.y + nodeDragOffset.y
-      };
+      const targetX = graphPos.x + nodeDragOffset.x;
+      const targetY = graphPos.y + nodeDragOffset.y;
+
+      // Get current node position for responsive velocity calculation
+      const currentNode = nodeLookupMap.get(isDraggingNode);
+      if (currentNode) {
+        // Calculate velocity as direct difference from current node to target position
+        const nodeVelocity = {
+          vx: (targetX - currentNode.x) * 0.6, // Responsive factor - higher = more responsive
+          vy: (targetY - currentNode.y) * 0.6
+        };
+
+        draggedNodeVelocityRef.current = {
+          nodeId: isDraggingNode,
+          vx: nodeVelocity.vx,
+          vy: nodeVelocity.vy
+        };
+      }
 
       // Start animation loop if needed
-      if (!animationFrameRef.current && (velocity.x !== 0 || velocity.y !== 0 || isDraggingNode)) {
+      if (!animationFrameRef.current && (panVelocity.x !== 0 || panVelocity.y !== 0 || isDraggingNode)) {
         animationFrameRef.current = requestAnimationFrame(animate);
       }
     }
@@ -581,7 +594,7 @@ export function GraphView({ value }: GraphViewProps) {
     setIsPanning(false);
     setIsDraggingNode(null);
     panVelocityRef.current = { x: 0, y: 0 };
-    draggedNodeTargetRef.current = { nodeId: null, x: 0, y: 0 };
+    draggedNodeVelocityRef.current = { nodeId: null, vx: 0, vy: 0 };
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
