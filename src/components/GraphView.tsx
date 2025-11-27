@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
@@ -337,6 +337,8 @@ export function GraphView({ value }: GraphViewProps) {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const autoPanVelocityRef = useRef({ x: 0, y: 0 });
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -374,6 +376,15 @@ export function GraphView({ value }: GraphViewProps) {
     }
     return lookupMap;
   }, [graphData]);
+
+  // Animation frame for smooth auto-panning
+  const animateAutoPan = useCallback(() => {
+    if (autoPanVelocityRef.current.x !== 0 || autoPanVelocityRef.current.y !== 0) {
+      setTranslateX(prev => prev + autoPanVelocityRef.current.x);
+      setTranslateY(prev => prev + autoPanVelocityRef.current.y);
+    }
+    animationFrameRef.current = requestAnimationFrame(animateAutoPan);
+  }, []);
 
   // Update graph data when value changes
   useEffect(() => {
@@ -474,33 +485,32 @@ export function GraphView({ value }: GraphViewProps) {
 
       // Auto-pan when dragging near edges
       const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
-      const distanceFromEdge = Math.min(
-        relativeX,
-        relativeY,
-        Math.abs(svgRect.width - relativeX),
-        Math.abs(svgRect.height - relativeY)
-      );
-      const panSpeed = (edgeThreshold - distanceFromEdge) ** 2 / 200; // Pixels to pan per frame
 
       let panX = 0;
       let panY = 0;
 
       if (relativeX < edgeThreshold) {
-        panX = panSpeed;
+        const distance = edgeThreshold - relativeX;
+        panX = (distance ** 2) / 200;
       } else if (relativeX > svgRect.width - edgeThreshold) {
-        panX = -panSpeed;
+        const distance = relativeX - (svgRect.width - edgeThreshold);
+        panX = -(distance ** 2) / 200;
       }
 
       if (relativeY < edgeThreshold) {
-        panY = panSpeed;
+        const distance = edgeThreshold - relativeY;
+        panY = (distance ** 2) / 200;
       } else if (relativeY > svgRect.height - edgeThreshold) {
-        panY = -panSpeed;
+        const distance = relativeY - (svgRect.height - edgeThreshold);
+        panY = -(distance ** 2) / 200;
       }
 
-      // Apply auto-pan if needed
-      if (panX !== 0 || panY !== 0) {
-        setTranslateX(prev => prev + panX);
-        setTranslateY(prev => prev + panY);
+      // Update velocity for smooth animation
+      autoPanVelocityRef.current = { x: panX, y: panY };
+
+      // Start animation loop if needed
+      if (!animationFrameRef.current && (panX !== 0 || panY !== 0)) {
+        animationFrameRef.current = requestAnimationFrame(animateAutoPan);
       }
 
       // Convert mouse position to graph space
@@ -525,16 +535,27 @@ export function GraphView({ value }: GraphViewProps) {
     }
   };
 
+  // Stop auto-pan animation helper
+  const stopAutoPan = useCallback(() => {
+    autoPanVelocityRef.current = { x: 0, y: 0 };
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+  }, []);
+
   // Handle mouse up for both pan and node drag
   const handleMouseUp = () => {
     setIsPanning(false);
     setIsDraggingNode(null);
+    stopAutoPan();
   };
 
   // Handle mouse leave to stop dragging
   const handleMouseLeave = () => {
     setIsPanning(false);
     setIsDraggingNode(null);
+    stopAutoPan();
   };
 
   // Handle node drag start
