@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextWidth } from './shared/DataVisualizationUtils';
