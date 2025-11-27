@@ -340,7 +340,6 @@ export function GraphView({ value }: GraphViewProps) {
   const animationFrameRef = useRef<number | null>(null);
   const panVelocityRef = useRef({ x: 0, y: 0 });
   const draggedNodeVelocityRef = useRef<{ nodeId: string | null; vx: number; vy: number }>({ nodeId: null, vx: 0, vy: 0 });
-  const previousMouseGraphPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Update dimensions when container size changes
   useEffect(() => {
