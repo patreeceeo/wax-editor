@@ -338,7 +338,7 @@ export function GraphView({ value }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const autoPanVelocityRef = useRef({ x: 0, y: 0 });
+  const panVelocityRef = useRef({ x: 0, y: 0 });
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -379,9 +379,9 @@ export function GraphView({ value }: GraphViewProps) {
 
   // Animation frame for smooth auto-panning
   const animateAutoPan = useCallback(() => {
-    if (autoPanVelocityRef.current.x !== 0 || autoPanVelocityRef.current.y !== 0) {
-      setTranslateX(prev => prev + autoPanVelocityRef.current.x);
-      setTranslateY(prev => prev + autoPanVelocityRef.current.y);
+    if (panVelocityRef.current.x !== 0 || panVelocityRef.current.y !== 0) {
+      setTranslateX(prev => prev + panVelocityRef.current.x);
+      setTranslateY(prev => prev + panVelocityRef.current.y);
     }
     animationFrameRef.current = requestAnimationFrame(animateAutoPan);
   }, []);
@@ -506,7 +506,7 @@ export function GraphView({ value }: GraphViewProps) {
       }
 
       // Update velocity for smooth animation
-      autoPanVelocityRef.current = { x: panX, y: panY };
+      panVelocityRef.current = { x: panX, y: panY };
 
       // Start animation loop if needed
       if (!animationFrameRef.current && (panX !== 0 || panY !== 0)) {
@@ -537,7 +537,7 @@ export function GraphView({ value }: GraphViewProps) {
 
   // Stop auto-pan animation helper
   const stopAutoPan = useCallback(() => {
-    autoPanVelocityRef.current = { x: 0, y: 0 };
+    panVelocityRef.current = { x: 0, y: 0 };
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
