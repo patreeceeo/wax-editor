@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
+import classNames from 'classnames';
 
 export interface GraphNode {
   id: string;
@@ -540,7 +541,10 @@ export function GraphView({ value }: GraphViewProps) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        className={isPanning ? "cursor-grabbing" : "cursor-grab"}
+        className={classNames("select-none", {
+          'cursor-grabbing': isPanning,
+          'cursor-grab': !isPanning
+        })}
         style={{
           width: '100%',
           height: '100%',
