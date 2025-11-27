@@ -1,5 +1,5 @@
+import type {JSX} from "react/jsx-runtime";
 import {CompiledProcedure} from "./compiled_procedure";
-import { thunkValueObject } from "./components/ValueObject";
 import {invariant} from "./error";
 
 interface WaxClassInit {
@@ -79,9 +79,10 @@ export class WaxClass<T> {
     return String(value);
   }
 
-  renderReact = thunkValueObject(((value: any) => {
-    return {value: this.stringify(value), color: this.displayColor };
-  }));
+  renderReact(value: any) {
+    const className = `inline-flex font-bold whitespace-pre`;
+    return <span className={className} style={{color: this.displayColor}}>{this.stringify(value)}</span>;
+  };
 }
 
 
@@ -126,7 +127,7 @@ export const procedureClass = new class extends WaxClass<CompiledProcedure> {
 }
 
 export const objectClass = new class extends WaxClass<Record<string, any>> {
-  displayName = "Js::Object";
+  displayName = "Object";
   displayColor = "var(--color-blue-600)";
   stringify(value: Record<string, any>) {
     return JSON.stringify(value);
@@ -138,6 +139,15 @@ export const arrayClass = new class extends WaxClass<any[]> {
   displayColor = "var(--color-teal-600)";
   stringify(value: any[]) {
     return JSON.stringify(value);
+  }
+  renderReact(value: any[]): JSX.Element {
+    const className = `inline-flex font-bold whitespace-pre`;
+    return (
+      <span className={className} style={{color: this.displayColor}}>[{value.map((subValue, index) => {
+        const waxClass = WaxClass.forJsObject(subValue);
+        return <span key={subValue}>{waxClass.renderReact(subValue)}{index < value.length - 1 ? ', ' : ''}</span>;
+      })}]</span>
+    )
   }
 }
 
