@@ -561,7 +561,7 @@ export function GraphView({ value }: GraphViewProps) {
       if (!mousePos) return;
 
       // Calculate auto-pan velocity
-      const panVelocity = getAutoPanVelocity(mousePos, event);
+      const panVelocity = getAutoPanVelocity(mousePos);
       panVelocityRef.current = panVelocity;
 
       // Convert to graph space and calculate node velocity
