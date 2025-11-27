@@ -339,6 +339,7 @@ export function GraphView({ value }: GraphViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const panVelocityRef = useRef({ x: 0, y: 0 });
+  const draggedNodeTargetRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -377,13 +378,37 @@ export function GraphView({ value }: GraphViewProps) {
     return lookupMap;
   }, [graphData]);
 
-  // Animation frame for smooth auto-panning
-  const animateAutoPan = useCallback(() => {
+  // Animation frame for smooth auto-panning and node dragging
+  const animate = useCallback(() => {
+    let needsAnimation = false;
+
+    // Apply auto-pan velocity
     if (panVelocityRef.current.x !== 0 || panVelocityRef.current.y !== 0) {
       setTranslateX(prev => prev + panVelocityRef.current.x);
       setTranslateY(prev => prev + panVelocityRef.current.y);
+      needsAnimation = true;
     }
-    animationFrameRef.current = requestAnimationFrame(animateAutoPan);
+
+    // Apply node dragging
+    const { nodeId, x, y } = draggedNodeTargetRef.current;
+
+    if (nodeId) {
+      setGraphData(prevData => ({
+        ...prevData,
+        nodes: prevData.nodes.map(node =>
+          node.id === nodeId
+            ? { ...node, x, y }
+            : node
+        )
+      }));
+      needsAnimation = true;
+    }
+
+    if (needsAnimation) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+    } else {
+      animationFrameRef.current = null;
+    }
   }, []);
 
   // Update graph data when value changes
@@ -464,122 +489,120 @@ export function GraphView({ value }: GraphViewProps) {
     setPanOffset({ x: translateX, y: translateY });
   };
 
+  // Get mouse position relative to SVG bounds
+  const getRelativeMousePos = (event: React.MouseEvent) => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return null;
+
+    const svgRect = svgElement.getBoundingClientRect();
+    return {
+      x: event.clientX - svgRect.left,
+      y: event.clientY - svgRect.top,
+      width: svgRect.width,
+      height: svgRect.height
+    };
+  };
+
+  // Calculate auto-pan velocity based on mouse position
+  const getAutoPanVelocity = (mousePos: { x: number; y: number; width: number; height: number }) => {
+    const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
+    let panX = 0;
+    let panY = 0;
+
+    if (mousePos.x < edgeThreshold) {
+      const distance = edgeThreshold - mousePos.x;
+      panX = (distance ** 2) / 200;
+    } else if (mousePos.x > mousePos.width - edgeThreshold) {
+      const distance = mousePos.x - (mousePos.width - edgeThreshold);
+      panX = -(distance ** 2) / 200;
+    }
+
+    if (mousePos.y < edgeThreshold) {
+      const distance = edgeThreshold - mousePos.y;
+      panY = (distance ** 2) / 200;
+    } else if (mousePos.y > mousePos.height - edgeThreshold) {
+      const distance = mousePos.y - (mousePos.height - edgeThreshold);
+      panY = -(distance ** 2) / 200;
+    }
+
+    return { x: panX, y: panY };
+  };
+
+  // Convert screen coordinates to graph space
+  const screenToGraphSpace = (clientX: number, clientY: number) => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return { x: 0, y: 0 };
+
+    const pt = svgElement.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const svgP = pt.matrixTransform(svgElement.getScreenCTM()?.inverse());
+
+    return {
+      x: (svgP.x - translateX) / scale,
+      y: (svgP.y - translateY) / scale
+    };
+  };
+
   // Handle mouse move for both pan and node drag
   const handleMouseMove = (event: React.MouseEvent) => {
     if (isPanning) {
       const deltaX = event.clientX - panStart.x;
       const deltaY = event.clientY - panStart.y;
-
       setTranslateX(panOffset.x + deltaX);
       setTranslateY(panOffset.y + deltaY);
     }
 
     if (isDraggingNode) {
-      // Get mouse position relative to SVG bounds
-      const svgElement = svgRef.current;
-      if (!svgElement) return;
+      const mousePos = getRelativeMousePos(event);
+      if (!mousePos) return;
 
-      const svgRect = svgElement.getBoundingClientRect();
-      const relativeX = event.clientX - svgRect.left;
-      const relativeY = event.clientY - svgRect.top;
+      // Calculate auto-pan velocity
+      const velocity = getAutoPanVelocity(mousePos);
+      panVelocityRef.current = velocity;
 
-      // Auto-pan when dragging near edges
-      const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
-
-      let panX = 0;
-      let panY = 0;
-
-      if (relativeX < edgeThreshold) {
-        const distance = edgeThreshold - relativeX;
-        panX = (distance ** 2) / 200;
-      } else if (relativeX > svgRect.width - edgeThreshold) {
-        const distance = relativeX - (svgRect.width - edgeThreshold);
-        panX = -(distance ** 2) / 200;
-      }
-
-      if (relativeY < edgeThreshold) {
-        const distance = edgeThreshold - relativeY;
-        panY = (distance ** 2) / 200;
-      } else if (relativeY > svgRect.height - edgeThreshold) {
-        const distance = relativeY - (svgRect.height - edgeThreshold);
-        panY = -(distance ** 2) / 200;
-      }
-
-      // Update velocity for smooth animation
-      panVelocityRef.current = { x: panX, y: panY };
+      // Convert to graph space and set node target position
+      const graphPos = screenToGraphSpace(event.clientX, event.clientY);
+      draggedNodeTargetRef.current = {
+        nodeId: isDraggingNode,
+        x: graphPos.x + nodeDragOffset.x,
+        y: graphPos.y + nodeDragOffset.y
+      };
 
       // Start animation loop if needed
-      if (!animationFrameRef.current && (panX !== 0 || panY !== 0)) {
-        animationFrameRef.current = requestAnimationFrame(animateAutoPan);
+      if (!animationFrameRef.current && (velocity.x !== 0 || velocity.y !== 0 || isDraggingNode)) {
+        animationFrameRef.current = requestAnimationFrame(animate);
       }
-
-      // Convert mouse position to graph space
-
-      const pt = svgElement.createSVGPoint();
-      pt.x = event.clientX;
-      pt.y = event.clientY;
-      const svgP = pt.matrixTransform(svgElement.getScreenCTM()?.inverse());
-
-      const graphX = (svgP.x - translateX) / scale;
-      const graphY = (svgP.y - translateY) / scale;
-
-      // Update node position
-      setGraphData(prevData => ({
-        ...prevData,
-        nodes: prevData.nodes.map(node =>
-          node.id === isDraggingNode
-            ? { ...node, x: graphX + nodeDragOffset.x, y: graphY + nodeDragOffset.y }
-            : node
-        )
-      }));
     }
   };
 
-  // Stop auto-pan animation helper
-  const stopAutoPan = useCallback(() => {
+  // Stop dragging helper
+  const stopDragging = useCallback(() => {
+    setIsPanning(false);
+    setIsDraggingNode(null);
     panVelocityRef.current = { x: 0, y: 0 };
+    draggedNodeTargetRef.current = { nodeId: null, x: 0, y: 0 };
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
   }, []);
 
-  // Handle mouse up for both pan and node drag
-  const handleMouseUp = () => {
-    setIsPanning(false);
-    setIsDraggingNode(null);
-    stopAutoPan();
-  };
-
-  // Handle mouse leave to stop dragging
-  const handleMouseLeave = () => {
-    setIsPanning(false);
-    setIsDraggingNode(null);
-    stopAutoPan();
-  };
+  const handleMouseUp = stopDragging;
+  const handleMouseLeave = stopDragging;
 
   // Handle node drag start
   const handleNodeMouseDown = (nodeId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent panning
 
-    const svgElement = svgRef.current;
-    if (!svgElement) return;
-
     const node = nodeLookupMap.get(nodeId);
     if (!node) return;
 
-    const pt = svgElement.createSVGPoint();
-    pt.x = event.clientX;
-    pt.y = event.clientY;
-    const svgP = pt.matrixTransform(svgElement.getScreenCTM()?.inverse());
-
-    const graphX = (svgP.x - translateX) / scale;
-    const graphY = (svgP.y - translateY) / scale;
-
+    const graphPos = screenToGraphSpace(event.clientX, event.clientY);
     setIsDraggingNode(nodeId);
     setNodeDragOffset({
-      x: node.x - graphX,
-      y: node.y - graphY
+      x: node.x - graphPos.x,
+      y: node.y - graphPos.y
     });
 
     setTopNodeId(nodeId);
