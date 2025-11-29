@@ -400,6 +400,8 @@ export function GraphView({ value }: GraphViewProps) {
             : node
         )
       }));
+      draggedNodeVelocityRef.current.vx = Math.max(0, draggedNodeVelocityRef.current.vx - 0.1);
+      draggedNodeVelocityRef.current.vy = Math.max(0, draggedNodeVelocityRef.current.vy - 0.1);
       needsAnimation = true;
     }
 
