@@ -576,8 +576,8 @@ export function GraphView({ value }: GraphViewProps) {
 
         draggedNodeVelocityRef.current = {
           nodeId: isDraggingNode,
-          vx: nodeVelocity.vx,
-          vy: nodeVelocity.vy
+          vx: -panVelocity.x || nodeVelocity.vx,
+          vy: -panVelocity.y || nodeVelocity.vy
         };
       }
 
