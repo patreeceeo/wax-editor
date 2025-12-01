@@ -3,6 +3,7 @@ import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueCla
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
+import {useEventListener} from '../react_hooks';
 
 export interface GraphNode {
   id: string;
@@ -336,7 +337,11 @@ export function GraphView({ value }: GraphViewProps) {
   const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
   const containerRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const svgRef = useEventListener<SVGSVGElement, "wheel">("wheel", (event) => {
+      event.preventDefault();
+      const delta = event.deltaY > 0 ? 0.9 : 1.1;
+      setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
+  }, { passive: false });
   const animationFrameRef = useRef<number | null>(null);
   const panVelocityRef = useRef({ x: 0, y: 0 });
   const draggedNodeVelocityRef = useRef<{ nodeId: string | null; vx: number; vy: number }>({ nodeId: null, vx: 0, vy: 0 });
@@ -464,24 +469,6 @@ export function GraphView({ value }: GraphViewProps) {
 
     return { regularNodes, topNodes, regularEdges, topEdges };
   }, [graphData, topNodeId]);
-
-  // Add non-passive wheel event listener for zoom
-  useEffect(() => {
-    const svgElement = svgRef.current;
-    if (!svgElement) return;
-
-    const handleWheelNonPassive = (event: WheelEvent) => {
-      event.preventDefault();
-      const delta = event.deltaY > 0 ? 0.9 : 1.1;
-      setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
-    };
-
-    svgElement.addEventListener('wheel', handleWheelNonPassive, { passive: false });
-
-    return () => {
-      svgElement.removeEventListener('wheel', handleWheelNonPassive);
-    };
-  }, []);
 
   // Handle pan start
   const handleMouseDown = (event: React.MouseEvent) => {
