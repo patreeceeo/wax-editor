@@ -1,6 +1,7 @@
 import type {JSX} from "react/jsx-runtime";
 import {CompiledProcedure} from "./compiled_procedure";
 import {invariant} from "./error";
+import {getObjectId} from "./utils";
 
 interface WaxClassInit {
   methods?: {[key: string]: CompiledProcedure};
@@ -145,7 +146,7 @@ export const arrayClass = new class extends WaxClass<any[]> {
     return (
       <span className={className} style={{color: this.displayColor}}>[{value.map((subValue, index) => {
         const waxClass = WaxClass.forJsObject(subValue);
-        return <span key={subValue}>{waxClass.renderReact(subValue)}{index < value.length - 1 ? ', ' : ''}</span>;
+        return <span key={getObjectId(subValue)}>{waxClass.renderReact(subValue)}{index < value.length - 1 ? ', ' : ''}</span>;
       })}]</span>
     )
   }
