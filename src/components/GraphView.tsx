@@ -3,7 +3,7 @@ import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueCla
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
-import {useAnimation, useEventListener, useResizeObserver} from '../react_hooks';
+import {useAnimation, useElementSize, useEventListener } from '../react_hooks';
 import {getMouseRelativeRect, screenToGraphSpace} from '../dom_utils';
 
 export interface GraphNode {
@@ -337,12 +337,11 @@ export function GraphView({ value }: GraphViewProps) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [containerRef, dimensions] = useElementSize<HTMLDivElement>(4/3);
   const [topNodeId, setTopNodeId] = useState<string | null>(null);
   const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
   const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
-  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useEventListener<SVGSVGElement, "wheel">("wheel", (event) => {
       event.preventDefault();
       const delta = event.deltaY > 0 ? 0.9 : 1.1;
@@ -350,17 +349,6 @@ export function GraphView({ value }: GraphViewProps) {
   }, { passive: false });
   const panVelocityRef = useRef({ x: 0, y: 0 });
   const draggedNodeVelocityRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
-
-  const updateDimensions = useCallback(() => {
-    if (containerRef.current) {
-      const { clientWidth, clientHeight } = containerRef.current;
-      setDimensions({ width: clientWidth, height: clientHeight });
-    }
-  }, []);
-
-  useEffect(updateDimensions, [setDimensions]);
-
-  useResizeObserver(containerRef, updateDimensions)
 
   // Create node lookup map from graph data
   const nodeLookupMap = useMemo(() => {

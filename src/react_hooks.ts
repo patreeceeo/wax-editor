@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 type EventTypeMap = {
   wheel: WheelEvent;
@@ -81,3 +81,31 @@ export function useAnimation(animate: (time: number) => void): Animation {
     cancelFrameRequest: cancelAnimation,
   };
 }
+
+/**
+* Hook for tracking the dimensions of an HTML element.
+*/
+export function useElementSize<ElementType extends Element>(aspectRatio: number): [React.RefObject<ElementType | null>, {width: number; height: number}] {
+  const elementRef = useRef<ElementType | null>(null);
+  const [size, setSize] = useState({width: aspectRatio, height: 1});
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      setSize({width: rect.width, height: rect.height});
+    }
+  }, [setSize]);
+
+  useResizeObserver(elementRef, (entries) => {
+    for (let entry of entries) {
+      const {width, height} = entry.contentRect;
+      setSize({width, height});
+    }
+  });
+
+  return [elementRef, size];
+}
+
+
+
