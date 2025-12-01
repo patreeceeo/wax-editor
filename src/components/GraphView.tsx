@@ -3,7 +3,7 @@ import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueCla
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
-import {useEventListener, useResizeObserver} from '../react_hooks';
+import {useAnimation, useEventListener, useResizeObserver} from '../react_hooks';
 
 export interface GraphNode {
   id: string;
@@ -367,14 +367,11 @@ export function GraphView({ value }: GraphViewProps) {
   }, [graphData]);
 
   // Animation frame for smooth auto-panning and node dragging
-  const animate = useCallback(() => {
-    let needsAnimation = false;
-
+  const animation = useAnimation(() => {
     // Apply auto-pan velocity
     if (panVelocityRef.current.x !== 0 || panVelocityRef.current.y !== 0) {
       setTranslateX(prev => prev + panVelocityRef.current.x);
       setTranslateY(prev => prev + panVelocityRef.current.y);
-      needsAnimation = true;
     }
 
     // Apply node dragging velocity
@@ -390,15 +387,8 @@ export function GraphView({ value }: GraphViewProps) {
       }));
       draggedNodeVelocityRef.current.x = Math.max(0, draggedNodeVelocityRef.current.x - 0.1);
       draggedNodeVelocityRef.current.y = Math.max(0, draggedNodeVelocityRef.current.y - 0.1);
-      needsAnimation = true;
     }
-
-    if (needsAnimation) {
-      animationFrameRef.current = requestAnimationFrame(animate);
-    } else {
-      animationFrameRef.current = null;
-    }
-  }, []);
+  });
 
   // Update graph data when value changes
   useEffect(() => {
@@ -554,8 +544,8 @@ export function GraphView({ value }: GraphViewProps) {
       }
 
       // Start animation loop if needed
-      if (!animationFrameRef.current && (panVelocity.x !== 0 || panVelocity.y !== 0 || isDraggingNode)) {
-        animationFrameRef.current = requestAnimationFrame(animate);
+      if (panVelocity.x !== 0 || panVelocity.y !== 0 || isDraggingNode) {
+        animation.requestFrame();
       }
     }
   };
@@ -566,10 +556,7 @@ export function GraphView({ value }: GraphViewProps) {
     setIsDraggingNode(null);
     panVelocityRef.current = { x: 0, y: 0 };
     draggedNodeVelocityRef.current = { nodeId: null, x: 0, y: 0 };
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
+    animation.cancelFrameRequest();
   }, []);
 
   const handleMouseUp = stopDragging;

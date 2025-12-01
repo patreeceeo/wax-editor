@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 
 type EventTypeMap = {
   wheel: WheelEvent;
@@ -45,4 +45,39 @@ export function useResizeObserver<ContainerElement extends Element>(
       resizeObserver.disconnect();
     };
   }, [callback]);
+}
+
+interface Animation {
+  requestFrame: () => void;
+  cancelFrameRequest: () => void;
+}
+
+/**
+* Hook for using requestAnimationFrame in a React component.
+* @return {Animation} to control the animation loop.
+*/
+export function useAnimation(animate: (time: number) => void): Animation {
+  const requestRef = useRef<number | null>(null);
+
+  const continueAnimation = useCallback(() => {
+    requestRef.current = requestAnimationFrame((time => {
+      animate(time);
+    }));
+  }, [animate]);
+
+  const cancelAnimation = useCallback(() => {
+    if (requestRef.current) {
+      cancelAnimationFrame(requestRef.current);
+      requestRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => cancelAnimation();
+  }, []);
+
+  return {
+    requestFrame: continueAnimation,
+    cancelFrameRequest: cancelAnimation,
+  };
 }
