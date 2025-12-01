@@ -3,7 +3,7 @@ import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueCla
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
-import {useEventListener} from '../react_hooks';
+import {useEventListener, useResizeObserver} from '../react_hooks';
 
 export interface GraphNode {
   id: string;
@@ -346,33 +346,16 @@ export function GraphView({ value }: GraphViewProps) {
   const panVelocityRef = useRef({ x: 0, y: 0 });
   const draggedNodeVelocityRef = useRef<{ nodeId: string | null; vx: number; vy: number }>({ nodeId: null, vx: 0, vy: 0 });
 
-  // Update dimensions when container size changes
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const { clientWidth, clientHeight } = containerRef.current;
-        setDimensions({ width: clientWidth, height: clientHeight });
-      }
-    };
-
-    // Initial measurement
-    updateDimensions();
-
-    // Set up resize observer if available
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(updateDimensions);
-      if (containerRef.current) {
-        resizeObserver.observe(containerRef.current);
-      }
+  const updateDimensions = useCallback(() => {
+    if (containerRef.current) {
+      const { clientWidth, clientHeight } = containerRef.current;
+      setDimensions({ width: clientWidth, height: clientHeight });
     }
-
-    return () => {
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-    };
   }, []);
+
+  useEffect(updateDimensions, [setDimensions]);
+
+  useResizeObserver(containerRef, updateDimensions)
 
   // Create node lookup map from graph data
   const nodeLookupMap = useMemo(() => {

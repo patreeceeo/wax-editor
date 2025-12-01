@@ -28,3 +28,21 @@ export function useEventListener<E extends Element, EventName extends keyof Even
 
   return elementRef;
 }
+
+export function useResizeObserver<ContainerElement extends Element>(
+  elementRef: React.RefObject<ContainerElement | null>,
+  callback: ResizeObserverCallback,
+) {
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const resizeObserver = new ResizeObserver(callback);
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.unobserve(element);
+      resizeObserver.disconnect();
+    };
+  }, [callback]);
+}
