@@ -538,8 +538,8 @@ export function GraphView({ value }: GraphViewProps) {
       if (currentNode) {
         draggedNodeVelocityRef.current = {
           nodeId: isDraggingNode,
-          x: -panVelocity.x || (targetX - currentNode.x) * DRAG_NODE_RESPONSIVENESS,
-          y: -panVelocity.y || (targetY - currentNode.y) * DRAG_NODE_RESPONSIVENESS
+          x: (targetX - currentNode.x) * DRAG_NODE_RESPONSIVENESS,
+          y: (targetY - currentNode.y) * DRAG_NODE_RESPONSIVENESS
         };
         dragNodeAnimation.requestFrame();
       }
