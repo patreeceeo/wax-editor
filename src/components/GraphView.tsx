@@ -399,24 +399,46 @@ export function GraphView({ value }: GraphViewProps) {
     setGraphData(layoutData);
   }, [value, dimensions]);
 
+  // Select nodes that are visible given the current zoom and pan state
+  const visibleNodes = useMemo(() => {
+    return graphData.nodes.filter(node => {
+      const screenX = node.x * scale + translateX;
+      const screenY = node.y * scale + translateY;
+      return (
+        screenX >= -100 &&
+        screenX <= dimensions.width + 100 &&
+        screenY >= -100 &&
+        screenY <= dimensions.height + 100
+      );
+    });
+  }, [graphData, scale, translateX, translateY, dimensions]);
+
+  // Select edges that connect visible nodes
+  const visibleEdges = useMemo(() => {
+    const visibleNodeIds = new Set(visibleNodes.map(node => node.id));
+    return graphData.edges.filter(edge =>
+      visibleNodeIds.has(edge.source) || visibleNodeIds.has(edge.target)
+    );
+  }, [graphData, visibleNodes]);
+
   // Filter nodes and edges into regular and top layers
   const { regularNodes, topNodes, regularEdges, topEdges } = useMemo(() => {
     if (!topNodeId) {
       return {
-        regularNodes: graphData.nodes,
+        regularNodes: visibleNodes,
         topNodes: [],
-        regularEdges: graphData.edges,
+        regularEdges: visibleEdges,
         topEdges: []
       };
     }
 
     // Get the selected node
-    const selectedNode = graphData.nodes.find(node => node.id === topNodeId);
+    const selectedNode = visibleNodes.find(node => node.id === topNodeId);
     if (!selectedNode) {
       return {
-        regularNodes: graphData.nodes,
+        regularNodes: visibleNodes,
         topNodes: [],
-        regularEdges: graphData.edges,
+        regularEdges: visibleEdges,
         topEdges: []
       };
     }
@@ -425,7 +447,7 @@ export function GraphView({ value }: GraphViewProps) {
     const connectedNodeIds = new Set<string>([topNodeId]);
     const topEdgeIds = new Set<string>();
 
-    graphData.edges.forEach(edge => {
+    visibleEdges.forEach(edge => {
       if (edge.source === topNodeId || edge.target === topNodeId) {
         topEdgeIds.add(edge.id);
         // Add the other connected node
@@ -437,13 +459,13 @@ export function GraphView({ value }: GraphViewProps) {
       }
     });
 
-    const topNodes = graphData.nodes.filter(node => connectedNodeIds.has(node.id));
-    const regularNodes = graphData.nodes.filter(node => !connectedNodeIds.has(node.id));
-    const topEdges = graphData.edges.filter(edge => topEdgeIds.has(edge.id));
-    const regularEdges = graphData.edges.filter(edge => !topEdgeIds.has(edge.id));
+    const topNodes = visibleNodes.filter(node => connectedNodeIds.has(node.id));
+    const regularNodes = visibleNodes.filter(node => !connectedNodeIds.has(node.id));
+    const topEdges = visibleEdges.filter(edge => topEdgeIds.has(edge.id));
+    const regularEdges = visibleEdges.filter(edge => !topEdgeIds.has(edge.id));
 
     return { regularNodes, topNodes, regularEdges, topEdges };
-  }, [graphData, topNodeId]);
+  }, [visibleNodes, topNodeId]);
 
   // Handle pan start
   const handleMouseDown = (event: React.MouseEvent) => {
