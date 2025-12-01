@@ -212,6 +212,17 @@ const GraphNodeComponent = React.memo(({
 
 GraphNodeComponent.displayName = 'GraphNodeComponent';
 
+function calculateEdgeTextAngle(dx: number, dy: number): number {
+  const angle = Math.atan2(dy, dx);
+  // Adjust angle to ensure text is always readable (not upside-down)
+  let adjustedAngle = angle;
+  if (Math.abs(angle) > Math.PI / 2) {
+    adjustedAngle = angle + Math.PI; // Rotate 180 degrees if angle is > 90 degrees or < -90 degrees
+  }
+  // Convert adjusted angle to degrees for rotation
+  return (adjustedAngle * 180) / Math.PI;
+}
+
 /**
  * Memoized individual graph edge component
  */
@@ -239,19 +250,10 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap, isTop = false}: { 
   // Calculate edge properties using intersection point
   const dx = intersection.x - sourceNode.x;
   const dy = intersection.y - sourceNode.y;
-  const angle = Math.atan2(dy, dx);
   const midX = (sourceNode.x + intersection.x) / 2;
   const midY = (sourceNode.y + intersection.y) / 2;
-  const text = String(edge.label);
 
-  // Adjust angle to ensure text is always readable (not upside-down)
-  let adjustedAngle = angle;
-  if (Math.abs(angle) > Math.PI / 2) {
-    adjustedAngle = angle + Math.PI; // Rotate 180 degrees if angle is > 90 degrees or < -90 degrees
-  }
-
-  // Convert adjusted angle to degrees for rotation
-  const angleDegrees = (adjustedAngle * 180) / Math.PI;
+  const edgeLength = Math.sqrt(dx * dx + dy * dy);
 
   return (
     <g>
@@ -265,15 +267,17 @@ const GraphEdgeComponent = React.memo(({ edge, nodeLookupMap, isTop = false}: { 
         markerEnd="url(#arrowhead)"
       />
       {/* Edge label with rotation */}
-      <TextRect
-        x={midX}
-        y={midY}
-        text={text}
-        transform={`rotate(${angleDegrees} ${midX} ${midY})`}
-        rectFill="var(--tw-prose-pre-bg)"
-        rectStroke="none"
-        textFill="rgb(217, 119, 6)"
-      />
+      {edgeLength > 60 && (
+        <TextRect
+          x={midX}
+          y={midY}
+          text={String(edge.label)}
+          transform={`rotate(${calculateEdgeTextAngle(dx, dy)} ${midX} ${midY})`}
+          rectFill="var(--tw-prose-pre-bg)"
+          rectStroke="none"
+          textFill="rgb(217, 119, 6)"
+        />
+      )}
     </g>
   );
 });
