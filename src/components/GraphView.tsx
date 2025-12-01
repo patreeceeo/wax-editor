@@ -344,7 +344,7 @@ export function GraphView({ value }: GraphViewProps) {
   }, { passive: false });
   const animationFrameRef = useRef<number | null>(null);
   const panVelocityRef = useRef({ x: 0, y: 0 });
-  const draggedNodeVelocityRef = useRef<{ nodeId: string | null; vx: number; vy: number }>({ nodeId: null, vx: 0, vy: 0 });
+  const draggedNodeVelocityRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
 
   const updateDimensions = useCallback(() => {
     if (containerRef.current) {
@@ -378,7 +378,7 @@ export function GraphView({ value }: GraphViewProps) {
     }
 
     // Apply node dragging velocity
-    const { nodeId, vx, vy } = draggedNodeVelocityRef.current;
+    const { nodeId, x: vx, y: vy } = draggedNodeVelocityRef.current;
     if (nodeId && (vx !== 0 || vy !== 0)) {
       setGraphData(prevData => ({
         ...prevData,
@@ -388,8 +388,8 @@ export function GraphView({ value }: GraphViewProps) {
             : node
         )
       }));
-      draggedNodeVelocityRef.current.vx = Math.max(0, draggedNodeVelocityRef.current.vx - 0.1);
-      draggedNodeVelocityRef.current.vy = Math.max(0, draggedNodeVelocityRef.current.vy - 0.1);
+      draggedNodeVelocityRef.current.x = Math.max(0, draggedNodeVelocityRef.current.x - 0.1);
+      draggedNodeVelocityRef.current.y = Math.max(0, draggedNodeVelocityRef.current.y - 0.1);
       needsAnimation = true;
     }
 
@@ -548,8 +548,8 @@ export function GraphView({ value }: GraphViewProps) {
 
         draggedNodeVelocityRef.current = {
           nodeId: isDraggingNode,
-          vx: -panVelocity.x || nodeVelocity.vx,
-          vy: -panVelocity.y || nodeVelocity.vy
+          x: -panVelocity.x || nodeVelocity.vx,
+          y: -panVelocity.y || nodeVelocity.vy
         };
       }
 
@@ -565,7 +565,7 @@ export function GraphView({ value }: GraphViewProps) {
     setIsPanning(false);
     setIsDraggingNode(null);
     panVelocityRef.current = { x: 0, y: 0 };
-    draggedNodeVelocityRef.current = { nodeId: null, vx: 0, vy: 0 };
+    draggedNodeVelocityRef.current = { nodeId: null, x: 0, y: 0 };
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
