@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
-import { getObjectId, isObjectOrArray } from '../utils';
+import { friction, getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
 import {useAnimation, useElementSize, useEventListener, usePanning } from '../react_hooks';
@@ -36,7 +36,7 @@ interface GraphViewProps {
 const graphDataCache = new Map<string, GraphData>();
 const graphDataWeakCache = new WeakMap<object, GraphData>();
 
-const DRAG_NODE_RESPONSIVENESS = 0.5; // Higher is more responsive
+const DRAG_NODE_RESPONSIVENESS = 0.01; // Higher is more responsive
 const LEAF_CLASSES = [stringClass, numberClass, trueClass, falseClass, nilClass, procedureClass];
 
 /**
@@ -380,19 +380,19 @@ export function GraphView({ value }: GraphViewProps) {
     return lookupMap;
   }, [graphData]);
 
-  const dragNodeAnimation = useAnimation(() => {
+  const dragNodeAnimation = useAnimation((deltaTime) => {
     const { nodeId, x: vx, y: vy } = draggedNodeVelocityRef.current;
     if (nodeId && (vx !== 0 || vy !== 0)) {
       setGraphData(prevData => ({
         ...prevData,
         nodes: prevData.nodes.map(node =>
           node.id === nodeId
-            ? { ...node, x: node.x + vx, y: node.y + vy }
+            ? { ...node, x: node.x + vx * deltaTime, y: node.y + vy * deltaTime }
             : node
         )
       }));
-      draggedNodeVelocityRef.current.x = Math.max(0, draggedNodeVelocityRef.current.x - 0.1);
-      draggedNodeVelocityRef.current.y = Math.max(0, draggedNodeVelocityRef.current.y - 0.1);
+      draggedNodeVelocityRef.current.x = friction(draggedNodeVelocityRef.current.x, 0.01, deltaTime);
+      draggedNodeVelocityRef.current.y = friction(draggedNodeVelocityRef.current.y, 0.01, deltaTime);
     }
   });
 
@@ -524,7 +524,6 @@ export function GraphView({ value }: GraphViewProps) {
       x: node.x - graphPos.x,
       y: node.y - graphPos.y
     });
-
     setTopNodeId(nodeId);
   };
 

@@ -57,12 +57,14 @@ interface Animation {
 * Hook for using requestAnimationFrame in a React component.
 * @return {Animation} to control the animation loop.
 */
-export function useAnimation(animate: (time: number) => void): Animation {
+export function useAnimation(animate: (deltaTime: number, time: number) => void): Animation {
   const requestRef = useRef<number | null>(null);
+  const prevTimeRef = useRef<number | null>(null);
 
   const continueAnimation = useCallback(() => {
     requestRef.current = requestAnimationFrame((time => {
-      animate(time);
+      animate(prevTimeRef.current !== null ? time - prevTimeRef.current : 0, time);
+      prevTimeRef.current = time;
     }));
   }, [animate]);
 
