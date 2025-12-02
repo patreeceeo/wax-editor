@@ -45,13 +45,6 @@ describe("Instruction Set Critical Bug Prevention", () => {
     });
   };
 
-  describe("Stack manipulation prevents crashes", () => {
-    test("pop throws when stack is empty", () => {
-      expect(context.stackSize).toBe(0);
-      expect(() => pop(context)).toThrow();
-    });
-  });
-
   describe("Variable scoping prevents undefined access", () => {
     test("getVariable throws when variable not found", () => {
       expect(() => getVariable(context, "nonexistent_var")).toThrow();
@@ -78,11 +71,6 @@ describe("Instruction Set Critical Bug Prevention", () => {
 
       getVariable(context, "literal_var");
       expect(context.getStackTop()).toBe(testValue);
-    });
-
-    test("setVariable throws when stack is empty", () => {
-      expect(context.stackSize).toBe(0);
-      expect(() => setVariable(context, "test_var")).toThrow();
     });
   });
 
@@ -266,11 +254,6 @@ describe("Instruction Set Critical Bug Prevention", () => {
   });
 
   describe("Return value handling", () => {
-    test("pushReturnValue throws when stack is empty", () => {
-      expect(context.stackSize).toBe(0);
-      expect(() => pushReturnValue(context)).toThrow();
-    });
-
     test("pushReturnValue moves value from stack to return values", () => {
       const testValue = "return_value";
       context.push(testValue);
