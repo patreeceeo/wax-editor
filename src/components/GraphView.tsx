@@ -367,22 +367,55 @@ export function GraphView({ value }: GraphViewProps) {
 
     return vel;
   }, [dimensions]);
-
-  const [topNodeId, setTopNodeId] = useState<string | null>(null);
+  
+  /** Node dragging */
   const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
-  const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
+  const [nodeDragOffset, setNodeDragOffset] = useState(new Vec2(0, 0));
   const draggedNodeVelocityRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (isDraggingNode) {
+      if(!svgRef.current) return;
 
-  // Create node lookup map from graph data
-  const nodeLookupMap = useMemo(() => {
-    const lookupMap = new Map<string, GraphNode>();
-    for (const node of graphData.nodes) {
-      lookupMap.set(node.id, node);
+      // Calculate auto-pan velocity
+      const panVelocity = getAutoPanVelocity(svgRef.current, event);
+      panning.updateTranslation((vec2) => vec2.add(panVelocity));
+
+      // Convert to graph space and calculate node velocity
+      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
+      const targetX = graphPos.x + nodeDragOffset.x;
+      const targetY = graphPos.y + nodeDragOffset.y;
+
+      // Get current node position for responsive velocity calculation
+      const currentNode = nodeLookupMap.get(isDraggingNode);
+      if (currentNode) {
+        draggedNodeVelocityRef.current = {
+          nodeId: isDraggingNode,
+          x: (targetX - currentNode.x) * DRAG_NODE_RESPONSIVENESS,
+          y: (targetY - currentNode.y) * DRAG_NODE_RESPONSIVENESS
+        };
+        dragNodeAnimation.requestFrame();
+      }
     }
-    return lookupMap;
-  }, [graphData]);
+  };
+  const stopDragging = useCallback(() => {
+    setIsDraggingNode(null);
+    draggedNodeVelocityRef.current = { nodeId: null, x: 0, y: 0 };
+    dragNodeAnimation.cancelFrameRequest();
+  }, []);
+  const handleNodeMouseDown = (nodeId: string, event: React.MouseEvent) => {
+    const node = nodeLookupMap.get(nodeId);
+    if (!node) return;
 
+    if(!svgRef.current) return;
+
+    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
+    setIsDraggingNode(nodeId);
+    setNodeDragOffset({
+      x: node.x - graphPos.x,
+      y: node.y - graphPos.y
+    });
+    setTopNodeId(nodeId);
+  };
   const dragNodeAnimation = useAnimation((deltaTime) => {
     const { nodeId, x: vx, y: vy } = draggedNodeVelocityRef.current;
     if (nodeId && (vx !== 0 || vy !== 0)) {
@@ -398,6 +431,19 @@ export function GraphView({ value }: GraphViewProps) {
       draggedNodeVelocityRef.current.y = friction(draggedNodeVelocityRef.current.y, 0.01, deltaTime);
     }
   });
+  /** End node dragging */
+
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
+  const [topNodeId, setTopNodeId] = useState<string | null>(null);
+  // Create node lookup map from graph data
+  const nodeLookupMap = useMemo(() => {
+    const lookupMap = new Map<string, GraphNode>();
+    for (const node of graphData.nodes) {
+      lookupMap.set(node.id, node);
+    }
+    return lookupMap;
+  }, [graphData]);
+
 
   // Update graph data when value changes
   useEffect(() => {
@@ -474,58 +520,6 @@ export function GraphView({ value }: GraphViewProps) {
     return { regularNodes, topNodes, regularEdges, topEdges };
   }, [visibleNodes, topNodeId]);
 
-  // Handle mouse move for both pan and node drag
-  const handleMouseMove = (event: React.MouseEvent) => {
-    if (isDraggingNode) {
-      if(!svgRef.current) return;
-
-      // Calculate auto-pan velocity
-      const panVelocity = getAutoPanVelocity(svgRef.current, event);
-      panning.updateTranslation((vec2) => vec2.add(panVelocity));
-
-      // Convert to graph space and calculate node velocity
-      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
-      const targetX = graphPos.x + nodeDragOffset.x;
-      const targetY = graphPos.y + nodeDragOffset.y;
-
-      // Get current node position for responsive velocity calculation
-      const currentNode = nodeLookupMap.get(isDraggingNode);
-      if (currentNode) {
-        draggedNodeVelocityRef.current = {
-          nodeId: isDraggingNode,
-          x: (targetX - currentNode.x) * DRAG_NODE_RESPONSIVENESS,
-          y: (targetY - currentNode.y) * DRAG_NODE_RESPONSIVENESS
-        };
-        dragNodeAnimation.requestFrame();
-      }
-    }
-  };
-
-  // Stop dragging helper
-  const stopDragging = useCallback(() => {
-    setIsDraggingNode(null);
-    draggedNodeVelocityRef.current = { nodeId: null, x: 0, y: 0 };
-    dragNodeAnimation.cancelFrameRequest();
-  }, []);
-
-  const handleMouseUp = stopDragging;
-  const handleMouseLeave = stopDragging;
-
-  // Handle node drag start
-  const handleNodeMouseDown = (nodeId: string, event: React.MouseEvent) => {
-    const node = nodeLookupMap.get(nodeId);
-    if (!node) return;
-
-    if(!svgRef.current) return;
-
-    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
-    setIsDraggingNode(nodeId);
-    setNodeDragOffset({
-      x: node.x - graphPos.x,
-      y: node.y - graphPos.y
-    });
-    setTopNodeId(nodeId);
-  };
 
   return (
     <div
@@ -538,8 +532,8 @@ export function GraphView({ value }: GraphViewProps) {
         width={dimensions.width}
         height={dimensions.height}
         onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
+        onMouseUp={stopDragging}
+        onMouseLeave={stopDragging}
         className={classNames("select-none", {
           'cursor-grabbing': panning.active,
           'cursor-grab': !panning.active
