@@ -511,8 +511,6 @@ export function GraphView({ value }: GraphViewProps) {
 
   // Handle node drag start
   const handleNodeMouseDown = (nodeId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent panning
-
     const node = nodeLookupMap.get(nodeId);
     if (!node) return;
 
