@@ -43,7 +43,7 @@ The system follows a classic compiler/VM pattern with a clean separation between
 
 - **Time-Travel Debugger** - Complete machine state snapshots for each execution step
 - **Machine Context** - React context provider distributes current/previous machine state
-- **Component Architecture** - Modular UI (ProgramViewer, TreeView, ContextDiff) with shared context
+- **Component Architecture** - Modular UI (ProgramViewer, GraphView, ContextDiff) with shared context
 
 ## Key Architectural Patterns
 
@@ -116,4 +116,4 @@ When modifying the React debugger:
 1. Use MachineContext for accessing machine state
 2. Follow time-travel patterns with immutable state updates
 3. Test debugger reducer actions with state snapshots
-4. Use TreeView component for recursive data visualization
+4. Use GraphView component for recursive data visualization

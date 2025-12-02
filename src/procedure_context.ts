@@ -1,3 +1,4 @@
+import {target} from "structurajs";
 import type {CompiledInstructionArg, CompiledProcedure} from "./compiled_procedure";
 import {invariant} from "./error";
 import type {Machine} from "./machine";
@@ -145,6 +146,14 @@ export class ProcedureContext {
 
   getReturnCount(): number {
     return this._returnValues.length;
+  }
+
+  afterProduce(): void {
+    /** Stack items are potentially dangling proxies because this context
+    * may have been created during a `produce` call on the machine.
+    * See https://giusepperaso.github.io/structura.js/gotchas.html#potential-dangling-proxy-references-if-you-assign-unproxied-objects-into-the-draft
+    */
+    this._stack = this._stack.map(item => target(item));
   }
 }
 

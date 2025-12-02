@@ -5,7 +5,7 @@ import JsonDiff from './JsonDiff';
 import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
 import Button from './Button';
 import ProgramViewer from './ProgramViewer';
-import {TreeView} from './TreeView';
+import {GraphView} from './GraphView';
 
 interface DebuggerProps {
   machine: Machine;
@@ -156,6 +156,7 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
         </Button>
       </div>
       <h3>Step Count: {stepCount}</h3>
+      <GraphView value={machines[machineIndex]} />
       <div className="flex space-x-4">
         <div>
           <h2>Instructions</h2>
@@ -181,7 +182,6 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
           </div>
         </div>
       </div>
-      <TreeView value={machines[machineIndex]} label='machine'/>
     </MachineProvider>
   )
 }

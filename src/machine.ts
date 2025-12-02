@@ -107,6 +107,7 @@ export class Machine extends PersistentObject {
     // All of my contexts should point to me instead of the previous machine
     for (const ctx of this._stack) {
       ctx._setMachine(this);
+      ctx.afterProduce();
     }
   }
 
