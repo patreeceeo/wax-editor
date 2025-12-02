@@ -18,7 +18,7 @@ Replace `[ ]` with `[x]` for completed tasks.
 
 ## 2. Code Quality & Architecture (25%)
 
-- [ ] **Readability & Self-Documentation:** Code explains itself via naming, structure, and typing. Comments explain *why*, not *what*.
+- [ ] **Readability & Self-Documentation:** Code explains itself via naming, structure, and typing. Comments explain _why_, not _what_.
 - [ ] **Modularity & DRYness:** Code is lean, cohesive, reusable, and free of unnecessary duplication.
 - [ ] **TypeScript Rigor:** Uses expressive, precise types. Avoids `any`, leverages unions/generics/utilities appropriately.
 - [ ] **Appropriate Abstractions:** Right level of abstraction — neither over-engineered nor ad hoc.
@@ -71,6 +71,3 @@ Replace `[ ]` with `[x]` for completed tasks.
 - What questions did the contributor ask before implementing?
 - How does this change improve the long-term health of the codebase?
 - What tradeoffs were made, and are they documented or justified?
-
-
-

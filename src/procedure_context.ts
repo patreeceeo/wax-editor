@@ -1,8 +1,11 @@
-import {target} from "structurajs";
-import type {CompiledInstructionArg, CompiledProcedure} from "./compiled_procedure";
-import {invariant} from "./error";
-import type {Machine} from "./machine";
-import type {Variable} from "./variable";
+import { target } from "structurajs";
+import type {
+  CompiledInstructionArg,
+  CompiledProcedure,
+} from "./compiled_procedure";
+import { invariant } from "./error";
+import type { Machine } from "./machine";
+import type { Variable } from "./variable";
 
 interface ProcedureContextInit {
   machine: Machine;
@@ -12,34 +15,39 @@ interface ProcedureContextInit {
 }
 
 export class ProcedureContext {
-  private _variables: {[key: string]: Variable} = Object.create(null);
+  private _variables: { [key: string]: Variable } = Object.create(null);
   private _stack: CompiledInstructionArg[] = [];
   private _machine: Machine;
   private _returnValues: CompiledInstructionArg[] = [];
 
   private _procedure: CompiledProcedure;
   /**
-  * Using an index works, but a direct reference was correlated with a bug:
-  * When a procedure would try to update a variable in a parent context, it
-  * would find the variable and update it correctly, but then then the
-  * machine would somehow have a copy of the parent context that did not
-  * reflect the updated variable value. Hypothesis: The copy-on-write
-  * logic was making copies of the contexts and referencing the new ones
-  * from the machine's stack, but those contexts themselves still had parent
-  * context references to the old contexts. Using an index forces the lookup
-  * to always go through the machine, which ensures the most up-to-date
-  * context is used.
-  */
+   * Using an index works, but a direct reference was correlated with a bug:
+   * When a procedure would try to update a variable in a parent context, it
+   * would find the variable and update it correctly, but then then the
+   * machine would somehow have a copy of the parent context that did not
+   * reflect the updated variable value. Hypothesis: The copy-on-write
+   * logic was making copies of the contexts and referencing the new ones
+   * from the machine's stack, but those contexts themselves still had parent
+   * context references to the old contexts. Using an index forces the lookup
+   * to always go through the machine, which ensures the most up-to-date
+   * context is used.
+   */
   private _parentContextIndex: number = -1;
 
   //@ts-expect-error
   private _methodSelector?: string;
 
-  constructor({machine, procedure, parentContext, methodSelector}: ProcedureContextInit) {
+  constructor({
+    machine,
+    procedure,
+    parentContext,
+    methodSelector,
+  }: ProcedureContextInit) {
     this._machine = machine;
     this._procedure = procedure;
     this._methodSelector = methodSelector;
-    if(parentContext !== undefined) {
+    if (parentContext !== undefined) {
       this._parentContextIndex = machine.indexOfProcedureContext(parentContext);
     }
   }
@@ -49,7 +57,7 @@ export class ProcedureContext {
   }
 
   get procedure() {
-    return this._procedure
+    return this._procedure;
   }
 
   get parentContext() {
@@ -82,8 +90,8 @@ export class ProcedureContext {
 
   private _getVariableContext(variableName: string): ProcedureContext {
     let ctx: ProcedureContext | undefined = this;
-    while(ctx !== undefined) {
-      if(variableName in ctx._variables) {
+    while (ctx !== undefined) {
+      if (variableName in ctx._variables) {
         return ctx;
       }
       ctx = ctx._machine.getProcedureContextAtIndex(ctx._parentContextIndex);
@@ -97,7 +105,7 @@ export class ProcedureContext {
 
   set(name: string, value: CompiledInstructionArg) {
     const variableContext = this._getVariableContext(name);
-    if(!variableContext.hasOwn(name)) {
+    if (!variableContext.hasOwn(name)) {
       variableContext._variables[name] = this._machine.createVariable();
     }
     variableContext._variables[name].value = value;
@@ -106,7 +114,10 @@ export class ProcedureContext {
   get(name: string): CompiledInstructionArg {
     const variableContext = this._getVariableContext(name);
     const variable = variableContext._variables[name];
-    invariant(variable !== undefined, `Variable "${name}" not found in this context or any parent context.`);
+    invariant(
+      variable !== undefined,
+      `Variable "${name}" not found in this context or any parent context.`,
+    );
     return variable.value;
   }
 
@@ -124,9 +135,9 @@ export class ProcedureContext {
 
   toJSON() {
     return {
-      variables: {...this._variables},
+      variables: { ...this._variables },
       stack: [...this._stack],
-      pc: this.pc
+      pc: this.pc,
     };
   }
 
@@ -149,10 +160,9 @@ export class ProcedureContext {
 
   afterProduce(): void {
     /** Stack items are potentially dangling proxies because this context
-    * may have been created during a `produce` call on the machine.
-    * See https://giusepperaso.github.io/structura.js/gotchas.html#potential-dangling-proxy-references-if-you-assign-unproxied-objects-into-the-draft
-    */
-    this._stack = this._stack.map(item => target(item));
+     * may have been created during a `produce` call on the machine.
+     * See https://giusepperaso.github.io/structura.js/gotchas.html#potential-dangling-proxy-references-if-you-assign-unproxied-objects-into-the-draft
+     */
+    this._stack = this._stack.map((item) => target(item));
   }
 }
-

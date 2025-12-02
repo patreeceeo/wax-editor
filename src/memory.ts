@@ -1,10 +1,12 @@
 // TODO use WeakMap with memoized key objects
 /** * A simple in-memory key-value store with reference counting. */
 export class Memory<T> {
-  private _store: {[key: string]: {
-    value: T
-    refCount: number
-  }} = Object.create(null);
+  private _store: {
+    [key: string]: {
+      value: T;
+      refCount: number;
+    };
+  } = Object.create(null);
   has(key: string): boolean {
     return key in this._store;
   }
@@ -32,7 +34,7 @@ export class Memory<T> {
     for (const key in this._store) {
       newMemory._store[key] = {
         value: this._store[key].value,
-        refCount: this._store[key].refCount
+        refCount: this._store[key].refCount,
       };
     }
     return newMemory;

@@ -1,5 +1,5 @@
-import type {ProcedureContext} from "./procedure_context";
-import {isObjectOrArray} from "./utils";
+import type { ProcedureContext } from "./procedure_context";
+import { isObjectOrArray } from "./utils";
 
 const CompiledProcedureSymbol = Symbol("CompiledProcedure");
 
@@ -20,7 +20,11 @@ export class CompiledProcedure {
 
   [CompiledProcedureSymbol] = true;
 
-  constructor({id, instructions = [], parentProcedure}: CompiledProcedureInit) {
+  constructor({
+    id,
+    instructions = [],
+    parentProcedure,
+  }: CompiledProcedureInit) {
     this.id = id;
     this._body = instructions;
     this._parentProcedure = parentProcedure;
@@ -32,7 +36,7 @@ export class CompiledProcedure {
     // Array.at is still somewhat new and may not be supported everywhere
     // TODO polyfill?
     const length = this._body.length;
-    return this._body[index < 0 ? length + (index % length) : (index % length)];
+    return this._body[index < 0 ? length + (index % length) : index % length];
   }
   append(...instruction: CompiledInstruction[]) {
     this._body.push(...instruction);
@@ -47,7 +51,6 @@ export class CompiledProcedure {
 
 export type CompiledInstructionArg = any;
 
-
 export interface InstructionFn<Args extends any[] = any[]> {
   (ctx: ProcedureContext, ...args: Args): true | void;
   // `function.name` is readonly and will get minified, hence a custom property
@@ -58,7 +61,4 @@ export interface CompiledInstruction<Args extends any[] = any[]> {
   name: string;
   fn: InstructionFn<Args>;
   args: Args;
-};
-
-
-
+}

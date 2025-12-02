@@ -22,19 +22,22 @@ export function getObjectEntries(value: any): ObjectEntry[] {
   return [];
 }
 
-export function getRenderingContextForFont(font: string): CanvasRenderingContext2D {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d')!;
+export function getRenderingContextForFont(
+  font: string,
+): CanvasRenderingContext2D {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d")!;
   context.font = font;
   return context;
 }
 
-const _letterWidths: Record<string, number> = {}
+const _letterWidths: Record<string, number> = {};
 let _letterWidthsInitialized = false;
 function initLetterWidths() {
-  const font = getComputedStyle(document.body).font || '16px sans-serif';
+  const font = getComputedStyle(document.body).font || "16px sans-serif";
   const context = getRenderingContextForFont(font);
-  const letters = '_-.!?<>(){}[] abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const letters =
+    "_-.!?<>(){}[] abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   for (const letter of letters) {
     const metrics = context.measureText(letter);
     _letterWidths[letter] = metrics.width;
@@ -78,7 +81,10 @@ const graphDataWeakCache = new WeakMap<object, GraphData>();
 /**
  * Transform a JavaScript object into a graph structure (cached)
  */
-export function objectToGraph(rootValue: any, isLeaf: (value: any) => boolean): GraphData {
+export function objectToGraph(
+  rootValue: any,
+  isLeaf: (value: any) => boolean,
+): GraphData {
   // Check cache first - handle both primitives and objects
   let cachedData: GraphData | undefined;
 
@@ -112,7 +118,7 @@ export function objectToGraph(rootValue: any, isLeaf: (value: any) => boolean): 
       value,
       x: 0, // Will be positioned by layout algorithm
       y: 0,
-      level
+      level,
     });
 
     // If not a leaf node, enqueue its properties
@@ -127,7 +133,7 @@ export function objectToGraph(rootValue: any, isLeaf: (value: any) => boolean): 
           id: `${id}-${targetId}-${key}`,
           source: id,
           target: targetId,
-          label: key
+          label: key,
         });
 
         // Add property value to queue if not visited
@@ -136,7 +142,7 @@ export function objectToGraph(rootValue: any, isLeaf: (value: any) => boolean): 
           queue.push({
             value: propertyValue,
             id: targetId,
-            level: level + 1
+            level: level + 1,
           });
         }
       }
@@ -159,7 +165,11 @@ export function objectToGraph(rootValue: any, isLeaf: (value: any) => boolean): 
 /**
  * Simple circular layout algorithm
  */
-export function hierarchicalLayout(graphData: GraphData, width: number, height: number): GraphData {
+export function hierarchicalLayout(
+  graphData: GraphData,
+  width: number,
+  height: number,
+): GraphData {
   const centerX = width / 2;
   const centerY = height / 2;
   const nodesByLevel = new Map<number, GraphNode[]>();
@@ -175,7 +185,7 @@ export function hierarchicalLayout(graphData: GraphData, width: number, height: 
   const numberOfLevels = nodesByLevel.size;
 
   // Position nodes
-  const positionedNodes = graphData.nodes.map(node => {
+  const positionedNodes = graphData.nodes.map((node) => {
     // Skip nodes that already have positions (were manually moved)
     if (node.x !== 0 || node.y !== 0) {
       return node;
@@ -189,7 +199,7 @@ export function hierarchicalLayout(graphData: GraphData, width: number, height: 
       return {
         ...node,
         x: centerX,
-        y: centerY
+        y: centerY,
       };
     }
 
@@ -198,29 +208,32 @@ export function hierarchicalLayout(graphData: GraphData, width: number, height: 
 
     // Even distribution around circle
     const angleStep = (2 * Math.PI) / nodesInLevel.length;
-    const angle = node.level * (2 * Math.PI / numberOfLevels) + levelIndex * angleStep;
+    const angle =
+      node.level * ((2 * Math.PI) / numberOfLevels) + levelIndex * angleStep;
 
     return {
       ...node,
       x: centerX + radius * Math.cos(angle),
-      y: centerY + radius * Math.sin(angle)
+      y: centerY + radius * Math.sin(angle),
     };
   });
 
   return { ...graphData, nodes: positionedNodes };
 }
 
-
-
 /**
  * Calculate intersection point of a line with a rectangle
  * Returns the point where the line from (x1, y1) to (x2, y2) intersects the rectangle bounds
  */
 export function getLineRectangleIntersection(
-  x1: number, y1: number,
-  x2: number, y2: number,
-  rectX: number, rectY: number,
-  rectWidth: number, rectHeight: number
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  rectX: number,
+  rectY: number,
+  rectWidth: number,
+  rectHeight: number,
 ): { x: number; y: number } {
   // Calculate rectangle boundaries
   const rectLeft = rectX - rectWidth / 2;

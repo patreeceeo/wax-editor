@@ -3,13 +3,15 @@ import { render } from "@testing-library/react";
 import { GraphView } from "./GraphView";
 
 vi.mock(import("../graph_utils.ts"), async (importOriginal) => {
-    const originalModule = await importOriginal<typeof import("../graph_utils.ts")>();
-    return {
-      ...originalModule,
-      getRenderingContextForFont: () => ({
+  const originalModule =
+    await importOriginal<typeof import("../graph_utils.ts")>();
+  return {
+    ...originalModule,
+    getRenderingContextForFont: () =>
+      ({
         measureText: (text: string) => ({ width: text.length * 8 }),
-      } as unknown as CanvasRenderingContext2D),
-    };
+      }) as unknown as CanvasRenderingContext2D,
+  };
 });
 
 describe("GraphView", () => {
@@ -18,8 +20,8 @@ describe("GraphView", () => {
       name: "test",
       value: 42,
       nested: {
-        prop: "hello"
-      }
+        prop: "hello",
+      },
     };
 
     render(<GraphView value={testData} />);

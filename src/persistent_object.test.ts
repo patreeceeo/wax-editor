@@ -1,21 +1,21 @@
-import {PersistentObject} from './persistent_object';
-import {test, expect} from 'vitest';
+import { PersistentObject } from "./persistent_object";
+import { test, expect } from "vitest";
 
 test("only copies changed parts of object", () => {
-  const original = new class extends PersistentObject {
+  const original = new (class extends PersistentObject {
     a = {
       b: {
         c: 1,
-        d: 2
+        d: 2,
       },
-      e: 3
-    }
+      e: 3,
+    };
     f = {
-      g: 4
-    }
-  }
+      g: 4,
+    };
+  })();
 
-  const modified = original.produce(draft => {
+  const modified = original.produce((draft) => {
     draft.a.b.c = 10; // Change a nested property
   });
 
@@ -29,19 +29,19 @@ test("only copies changed parts of object", () => {
 });
 
 test("circular references are handled correctly", () => {
-  const original = new class extends PersistentObject {
+  const original = new (class extends PersistentObject {
     a = {
       b: 1,
-      self: null as any
-    }
+      self: null as any,
+    };
     constructor() {
       super();
       // Create a circular reference
       this.a.self = this.a;
     }
-  }
+  })();
 
-  const modified = original.produce(draft => {
+  const modified = original.produce((draft) => {
     draft.a.b = 10; // Change a property
   });
 
@@ -54,8 +54,8 @@ test("circular references are handled correctly", () => {
 });
 
 test("getters/setters", () => {
-  const original = new class extends PersistentObject {
-    _a = 1
+  const original = new (class extends PersistentObject {
+    _a = 1;
     get a() {
       return this._a;
     }
@@ -65,9 +65,9 @@ test("getters/setters", () => {
     set a(value: number) {
       this._a = value;
     }
-  };
+  })();
 
-  const modified = original.produce(draft => {
+  const modified = original.produce((draft) => {
     draft.a = 10; // Use the setter
   });
 
@@ -96,7 +96,7 @@ test("retains instance types", () => {
 
   const original = new MyClass(1);
 
-  const modified = original.produce(draft => {
+  const modified = original.produce((draft) => {
     draft.increment(); // Call a method to modify state
   });
 
@@ -116,7 +116,7 @@ test("afterProduce hook is called", () => {
 
   const original = new MyPersistentObject();
 
-  original.produce(draft => {
+  original.produce((draft) => {
     draft.a = 2;
   });
 

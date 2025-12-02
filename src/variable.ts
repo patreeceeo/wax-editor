@@ -1,4 +1,4 @@
-import type {CompiledInstructionArg} from "./compiled_procedure";
+import type { CompiledInstructionArg } from "./compiled_procedure";
 
 interface VariableInit {
   id: number;
@@ -9,7 +9,7 @@ export class Variable {
   readonly id: number;
   private _value: CompiledInstructionArg;
 
-  constructor({id, value}: VariableInit) {
+  constructor({ id, value }: VariableInit) {
     this.id = id;
     this._value = value;
   }

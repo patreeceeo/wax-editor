@@ -1,7 +1,7 @@
-import {beforeEach, describe, expect, test} from "vitest";
-import {Machine} from "./machine";
-import {CompiledProcedure} from "./compiled_procedure";
-import {Compiler} from "./compiler";
+import { beforeEach, describe, expect, test } from "vitest";
+import { Machine } from "./machine";
+import { CompiledProcedure } from "./compiled_procedure";
+import { Compiler } from "./compiler";
 import {
   literal,
   pop,
@@ -21,9 +21,9 @@ import {
   invokeProcedure,
   halt,
   getJsObjectPropertyForLiteral,
-  getJsObjectProperty
+  getJsObjectProperty,
 } from "./compiled_instructions";
-import type {ProcedureContext} from "./procedure_context";
+import type { ProcedureContext } from "./procedure_context";
 
 describe("Instruction Set Critical Bug Prevention", () => {
   let machine: Machine;
@@ -32,7 +32,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
 
   beforeEach(() => {
     machine = new Machine();
-    procedure = new CompiledProcedure({id: "test", instructions: []});
+    procedure = new CompiledProcedure({ id: "test", instructions: [] });
     machine.loadMemory("main", procedure);
     machine.start();
     context = machine.currentProcedureContext()!;
@@ -41,7 +41,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
   const createTestProcedure = (instructions: any[] = []) => {
     return new CompiledProcedure({
       id: "test",
-      instructions
+      instructions,
     });
   };
 
@@ -98,7 +98,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
         Compiler.emit(literal, 2),
         Compiler.emit(literal, 3),
         Compiler.emit(literal, 4),
-        Compiler.emit(literal, 5)
+        Compiler.emit(literal, 5),
       ]);
       machine.invokeProcedure(smallProc, []);
       const smallCtx = machine.currentProcedureContext()!;
@@ -313,7 +313,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
 
   describe("Basic instruction behavior verification", () => {
     test("literal pushes values to stack", () => {
-      const testValue = {test: "object"};
+      const testValue = { test: "object" };
 
       literal(context, testValue);
 
@@ -421,7 +421,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
     describe("getJsObjectProperty", () => {
       test("getJsObjectProperty throws when insufficient stack items", () => {
         // Push only object, no key
-        context.push({a: 1});
+        context.push({ a: 1 });
         expect(context.stackSize).toBe(1);
         expect(() => getJsObjectProperty(context)).toThrow();
       });
@@ -438,7 +438,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
       });
 
       test("getJsObjectProperty throws when key is not string or number", () => {
-        const obj = {valid: "value"};
+        const obj = { valid: "value" };
         context.push(obj);
         context.push({}); // object as key (invalid)
 
@@ -446,9 +446,9 @@ describe("Instruction Set Critical Bug Prevention", () => {
       });
 
       test("getJsObjectProperty works correctly with string key", () => {
-        const obj = {name: "test", value: 42};
+        const obj = { name: "test", value: 42 };
         context.push("name"); // key
-        context.push(obj);   // object
+        context.push(obj); // object
 
         getJsObjectProperty(context);
 
@@ -458,8 +458,8 @@ describe("Instruction Set Critical Bug Prevention", () => {
 
       test("getJsObjectProperty works correctly with numeric key", () => {
         const arr = ["first", "second", "third"];
-        context.push(1);     // numeric key
-        context.push(arr);   // array
+        context.push(1); // numeric key
+        context.push(arr); // array
 
         getJsObjectProperty(context);
 
@@ -468,9 +468,9 @@ describe("Instruction Set Critical Bug Prevention", () => {
       });
 
       test("getJsObjectProperty returns undefined for non-existent property", () => {
-        const obj = {existing: "value"};
+        const obj = { existing: "value" };
         context.push("nonexistent"); // key
-        context.push(obj);           // object
+        context.push(obj); // object
 
         getJsObjectProperty(context);
 
@@ -487,11 +487,13 @@ describe("Instruction Set Critical Bug Prevention", () => {
 
       test("getJsObjectPropertyForLiteral throws when accessing property of non-object", () => {
         context.push("not_an_object");
-        expect(() => getJsObjectPropertyForLiteral(context, "someProperty")).toThrow();
+        expect(() =>
+          getJsObjectPropertyForLiteral(context, "someProperty"),
+        ).toThrow();
       });
 
       test("getJsObjectPropertyForLiteral works correctly with valid object", () => {
-        const obj = {name: "test", value: 42, nested: {prop: "nested"}};
+        const obj = { name: "test", value: 42, nested: { prop: "nested" } };
         context.push(obj);
 
         getJsObjectPropertyForLiteral(context, "name");
@@ -511,7 +513,7 @@ describe("Instruction Set Critical Bug Prevention", () => {
       });
 
       test("getJsObjectPropertyForLiteral returns undefined for non-existent property", () => {
-        const obj = {existing: "value"};
+        const obj = { existing: "value" };
         context.push(obj);
 
         getJsObjectPropertyForLiteral(context, "nonexistent");

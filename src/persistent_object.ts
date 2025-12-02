@@ -1,4 +1,4 @@
-import {produce, type Producer} from 'structurajs';
+import { produce, type Producer } from "structurajs";
 
 export class PersistentObject {
   produce(updater: Producer<this, this, false>): this {
@@ -6,7 +6,5 @@ export class PersistentObject {
     result.afterProduce();
     return result;
   }
-  afterProduce(): void {
-  }
+  afterProduce(): void {}
 }
-

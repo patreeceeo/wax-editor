@@ -1,9 +1,8 @@
-
 const sizeClasses = {
   xl: "w-8 h-8",
   l: "w-6 h-6",
   m: "w-5 h-5",
-  s: "w-4 h-4"
+  s: "w-4 h-4",
 } as const;
 
 const VIEW_BOX = "0 0 24 24";
@@ -27,15 +26,11 @@ const ResetIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
   );
 };
 
-const PlayIconPath = () => (<path d="M6 2v20l16-10z" />);
+const PlayIconPath = () => <path d="M6 2v20l16-10z" />;
 
-const PlayIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses}) => {
+const PlayIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
   return (
-    <svg
-      className={sizeClasses[size]}
-      viewBox={VIEW_BOX}
-      fill="currentColor"
-    >
+    <svg className={sizeClasses[size]} viewBox={VIEW_BOX} fill="currentColor">
       <PlayIconPath />
     </svg>
   );
@@ -47,7 +42,7 @@ const BackIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
       className={sizeClasses[size]}
       viewBox={VIEW_BOX}
       fill="currentColor"
-      style={{transform: 'rotate(180deg)'}}
+      style={{ transform: "rotate(180deg)" }}
     >
       <PlayIconPath />
     </svg>
@@ -61,13 +56,13 @@ const FastForwardIconPath = () => (
   </>
 );
 
-const FastForwardIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
+const FastForwardIcon = ({
+  size = "m",
+}: {
+  size?: keyof typeof sizeClasses;
+}) => {
   return (
-    <svg
-      className={sizeClasses[size]}
-      viewBox={VIEW_BOX}
-      fill="currentColor"
-    >
+    <svg className={sizeClasses[size]} viewBox={VIEW_BOX} fill="currentColor">
       <FastForwardIconPath />
     </svg>
   );
@@ -79,11 +74,11 @@ const RewindIcon = ({ size = "m" }: { size?: keyof typeof sizeClasses }) => {
       className={sizeClasses[size]}
       viewBox={VIEW_BOX}
       fill="currentColor"
-      style={{transform: 'rotate(180deg)'}}
+      style={{ transform: "rotate(180deg)" }}
     >
       <FastForwardIconPath />
     </svg>
   );
-}
+};
 
 export { ResetIcon, PlayIcon, BackIcon, FastForwardIcon, RewindIcon };

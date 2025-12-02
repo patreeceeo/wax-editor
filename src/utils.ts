@@ -1,10 +1,11 @@
-
 export function getTypeName(value: any) {
   return typeof value;
 }
 
-export function isObjectOrArray(value: any): value is (Record<string, any> | any[]) {
-  return value !== null && getTypeName(value) === 'object';
+export function isObjectOrArray(
+  value: any,
+): value is Record<string, any> | any[] {
+  return value !== null && getTypeName(value) === "object";
 }
 export function isObject(value: any): value is Record<string, any> {
   return isObjectOrArray(value) && !isArray(value);
@@ -14,20 +15,27 @@ export function isArray(value: any): value is any[] {
 }
 
 export function isString(value: any): value is string {
-  return getTypeName(value) === 'string';
+  return getTypeName(value) === "string";
 }
 
 export function isNumber(value: any): value is number {
-  return getTypeName(value) === 'number';
+  return getTypeName(value) === "number";
 }
 
 export function isBoolean(value: any): value is boolean {
-  return getTypeName(value) === 'boolean';
+  return getTypeName(value) === "boolean";
 }
 
-export function isJsPrimitive(value: any): value is (string | number | boolean | undefined) {
+export function isJsPrimitive(
+  value: any,
+): value is string | number | boolean | undefined {
   const typeName = getTypeName(value);
-  return value === undefined || typeName === 'string' || typeName === 'number' || typeName === 'boolean';
+  return (
+    value === undefined ||
+    typeName === "string" ||
+    typeName === "number" ||
+    typeName === "boolean"
+  );
 }
 
 /**
@@ -38,7 +46,7 @@ let nextObjectId = 0;
 const primitiveIds = new Map<string, number>();
 export function getObjectId(value: any): string {
   const type = typeof value;
-  if (type === 'object' || type === 'function') {
+  if (type === "object" || type === "function") {
     // Use WeakMap to maintain consistent IDs for object instances
     if (!objectIds.has(value)) {
       objectIds.set(value, String(nextObjectId++));
