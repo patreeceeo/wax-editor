@@ -1,10 +1,9 @@
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
-import {useAnimation, useElementSize, useEventListener, usePanning } from '../react_hooks';
-import {screenToGraphSpace} from '../dom_utils';
+import {useElementSize, useEventListener, usePanning, useSvgChildDragging } from '../react_hooks';
 import {Vec2} from '../vec2';
 
 export interface GraphNode {
@@ -366,51 +365,29 @@ export function GraphView({ value }: GraphViewProps) {
 
     return vel;
   }, [dimensions]);
-  
-  /** Node dragging */
-  const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
-  const draggedNodePositionRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
-  const handleNodeMouseDown = (nodeId: string) => {
-    setIsDraggingNode(nodeId);
-    setTopNodeId(nodeId);
-  };
-  const handleMouseMove = (event: React.MouseEvent) => {
-    if(!svgRef.current) return;
-    if (isDraggingNode) {
-      // Calculate auto-pan velocity
-      const panVelocity = getAutoPanVelocity(svgRef.current, event);
-      panning.updateTranslation((vec2) => vec2.add(panVelocity));
 
-      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
-
-      const dragNodeInfo = draggedNodePositionRef.current;
-      dragNodeInfo.nodeId = isDraggingNode;
-      dragNodeInfo.x = graphPos.x;
-      dragNodeInfo.y = graphPos.y;
-      dragNodeAnimation.requestFrame();
-    }
-  };
-  const stopDragging = useCallback(() => {
-    setIsDraggingNode(null);
-    draggedNodePositionRef.current = { nodeId: null, x: 0, y: 0 };
-    dragNodeAnimation.cancelFrameRequest();
-  }, []);
-  const dragNodeAnimation = useAnimation(() => {
-    const { nodeId, x, y } = draggedNodePositionRef.current;
-    setGraphData(prevData => ({
-      ...prevData,
-      nodes: prevData.nodes.map(node =>
+  /** Nodes and edges */
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
+  const onNodePositionUpdate = useCallback((nodeId: string, {x, y}: Vec2) => {
+    setGraphData({
+      ...graphData,
+      nodes: graphData.nodes.map(node =>
         node.id === nodeId
           ? { ...node, x, y}
           : node
       )
-    }));
-  });
-  /** End node dragging */
+    });
+  }, [setGraphData, graphData]);
 
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
+  const dragging = useSvgChildDragging({svgRef, getAutoPanVelocity, panning, scale, onPositionUpdate: onNodePositionUpdate});
+
   const [topNodeId, setTopNodeId] = useState<string | null>(null);
-  // Create node lookup map from graph data
+
+  const handleNodeMouseDown = useCallback((nodeId: string, event: React.MouseEvent) => {
+    dragging.handleChildMouseDown(nodeId, event);
+    setTopNodeId(nodeId);
+  }, [dragging, setTopNodeId]);
+
   const nodeLookupMap = useMemo(() => {
     const lookupMap = new Map<string, GraphNode>();
     for (const node of graphData.nodes) {
@@ -506,9 +483,9 @@ export function GraphView({ value }: GraphViewProps) {
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
-        onMouseMove={handleMouseMove}
-        onMouseUp={stopDragging}
-        onMouseLeave={stopDragging}
+        onMouseMove={dragging.handleSvgMouseMove}
+        onMouseUp={dragging.handleSvgMouseUp}
+        onMouseLeave={dragging.handleSvgMouseLeave}
         className={classNames("select-none", {
           'cursor-grabbing': panning.active,
           'cursor-grab': !panning.active

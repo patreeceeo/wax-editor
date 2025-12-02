@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Vec2} from './vec2';
+import {screenToGraphSpace} from './dom_utils';
 
 type EventTypeMap = {
   wheel: WheelEvent;
@@ -176,3 +177,102 @@ export function usePanning(
       }
     }};
 }
+
+interface DragState {
+  draggedElementId: string | null;
+}
+
+interface UseSvgChildDraggingOptions {
+  svgRef: React.RefObject<SVGSVGElement | null>;
+  getAutoPanVelocity?: (svgElement: SVGSVGElement, event: React.MouseEvent) => Vec2;
+  panning: ReturnType<typeof usePanning>;
+  scale: number;
+  onPositionUpdate: (elementId: string, position: Vec2) => void;
+}
+
+interface UseSvgChildDraggingReturn {
+  handleChildMouseDown: (elementId: string, event: React.MouseEvent) => void;
+  handleSvgMouseMove: (event: React.MouseEvent) => void;
+  handleSvgMouseUp: () => void;
+  handleSvgMouseLeave: () => void;
+}
+
+/**
+ * Hook for handling dragging of SVG child elements with smooth animation
+ * and optional auto-panning support.
+ */
+export function useSvgChildDragging({
+  svgRef,
+  getAutoPanVelocity,
+  panning,
+  onPositionUpdate,
+  scale,
+}: UseSvgChildDraggingOptions): UseSvgChildDraggingReturn {
+  const [dragState, setDragState] = useState<DragState>({
+    draggedElementId: null
+  });
+
+  const positionRef = useRef<Vec2>(new Vec2(0, 0));
+
+  const handleChildMouseDown = useCallback((elementId: string, event: React.MouseEvent) => {
+      setDragState({ draggedElementId: elementId });
+
+      const svgElement = svgRef.current;
+      if (!svgElement) return;
+
+      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgElement)
+        .subtract(panning.translation)
+        .divide(scale);
+
+      // Store the initial position
+      positionRef.current = graphPos;
+
+      animation.requestFrame();
+  }, [svgRef, panning]);
+
+  const handleSvgMouseMove = useCallback((event: React.MouseEvent) => {
+    if (!dragState.draggedElementId) {
+      return;
+    }
+
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    // Handle auto-panning
+    if (getAutoPanVelocity && panning) {
+      const panVelocity = getAutoPanVelocity(svgElement, event);
+      if (!panVelocity.isZero()) {
+        panning.updateTranslation((vec2) => vec2.add(panVelocity));
+      }
+    }
+
+    // Convert mouse position to graph space using dom_utils
+    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgElement)
+      .subtract(panning.translation)
+      .divide(scale);
+
+    // Update target position
+    positionRef.current = graphPos;
+    animation.requestFrame();
+  }, [dragState.draggedElementId, svgRef, getAutoPanVelocity, panning]);
+
+  const handleSvgMouseUp = useCallback(() => {
+    setDragState({ draggedElementId: null });
+    animation.cancelFrameRequest();
+  }, []);
+
+  const animation = useAnimation(() => {
+    if (dragState.draggedElementId) {
+      onPositionUpdate(dragState.draggedElementId, positionRef.current);
+    }
+  });
+
+  return {
+    handleChildMouseDown,
+    handleSvgMouseMove,
+    handleSvgMouseUp,
+    handleSvgMouseLeave: handleSvgMouseUp
+  };
+}
+
+
