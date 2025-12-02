@@ -3,8 +3,9 @@ import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueCla
 import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
-import {useAnimation, useElementSize, useEventListener } from '../react_hooks';
+import {useAnimation, useElementSize, useEventListener, usePanning } from '../react_hooks';
 import {getMouseRelativeRect, screenToGraphSpace} from '../dom_utils';
+import {Vec2} from '../vec2';
 
 export interface GraphNode {
   id: string;
@@ -332,22 +333,42 @@ const TextRect = ({ x, y, text, transform, rectFill, rectStroke, textFill, paddi
  */
 export function GraphView({ value }: GraphViewProps) {
   const [scale, setScale] = useState(1);
-  const [translateX, setTranslateX] = useState(0);
-  const [translateY, setTranslateY] = useState(0);
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [containerRef, dimensions] = useElementSize<HTMLDivElement>(4/3);
-  const [topNodeId, setTopNodeId] = useState<string | null>(null);
-  const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
-  const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
   const svgRef = useEventListener<SVGSVGElement, "wheel">("wheel", (event) => {
       event.preventDefault();
       const delta = event.deltaY > 0 ? 0.9 : 1.1;
       setScale(prev => Math.max(0.1, Math.min(5, prev * delta)));
   }, { passive: false });
-  const panVelocityRef = useRef({ x: 0, y: 0 });
+
+  /** Panning */
+  const panning = usePanning(svgRef)
+  const getAutoPanVelocity = (mousePos: { x: number; y: number; width: number; height: number }) => {
+    const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
+    const vel = new Vec2(0, 0);
+
+    if (mousePos.x < edgeThreshold) {
+      const distance = edgeThreshold - mousePos.x;
+      vel.x = (distance ** 2) / 200;
+    } else if (mousePos.x > mousePos.width - edgeThreshold) {
+      const distance = mousePos.x - (mousePos.width - edgeThreshold);
+      vel.x = -(distance ** 2) / 200;
+    }
+
+    if (mousePos.y < edgeThreshold) {
+      const distance = edgeThreshold - mousePos.y;
+      vel.y = (distance ** 2) / 200;
+    } else if (mousePos.y > mousePos.height - edgeThreshold) {
+      const distance = mousePos.y - (mousePos.height - edgeThreshold);
+      vel.y = -(distance ** 2) / 200;
+    }
+
+    return vel;
+  };
+
+  const [containerRef, dimensions] = useElementSize<HTMLDivElement>(4/3);
+  const [topNodeId, setTopNodeId] = useState<string | null>(null);
+  const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
+  const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
   const draggedNodeVelocityRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
 
   // Create node lookup map from graph data
@@ -359,17 +380,7 @@ export function GraphView({ value }: GraphViewProps) {
     return lookupMap;
   }, [graphData]);
 
-  // Animation frame for smooth auto-panning and node dragging
-  const panAnimation = useAnimation(() => {
-    // Apply auto-pan velocity
-    if (panVelocityRef.current.x !== 0 || panVelocityRef.current.y !== 0) {
-      setTranslateX(prev => prev + panVelocityRef.current.x);
-      setTranslateY(prev => prev + panVelocityRef.current.y);
-    }
-  });
-
   const dragNodeAnimation = useAnimation(() => {
-    // Apply node dragging velocity
     const { nodeId, x: vx, y: vy } = draggedNodeVelocityRef.current;
     if (nodeId && (vx !== 0 || vy !== 0)) {
       setGraphData(prevData => ({
@@ -395,8 +406,8 @@ export function GraphView({ value }: GraphViewProps) {
   // Select nodes that are visible given the current zoom and pan state
   const visibleNodes = useMemo(() => {
     return graphData.nodes.filter(node => {
-      const screenX = node.x * scale + translateX;
-      const screenY = node.y * scale + translateY;
+      const screenX = node.x * scale + panning.translation.x;
+      const screenY = node.y * scale + panning.translation.y;
       return (
         screenX >= -100 &&
         screenX <= dimensions.width + 100 &&
@@ -404,7 +415,7 @@ export function GraphView({ value }: GraphViewProps) {
         screenY <= dimensions.height + 100
       );
     });
-  }, [graphData, scale, translateX, translateY, dimensions]);
+  }, [graphData, scale, panning, dimensions]);
 
   // Select edges that connect visible nodes
   const visibleEdges = useMemo(() => {
@@ -460,62 +471,18 @@ export function GraphView({ value }: GraphViewProps) {
     return { regularNodes, topNodes, regularEdges, topEdges };
   }, [visibleNodes, topNodeId]);
 
-  // Handle pan start
-  const handleMouseDown = (event: React.MouseEvent) => {
-    setIsPanning(true);
-    setPanStart({ x: event.clientX, y: event.clientY });
-    setPanOffset({ x: translateX, y: translateY });
-  };
-
-
-  // Calculate auto-pan velocity based on mouse position
-  const getAutoPanVelocity = (mousePos: { x: number; y: number; width: number; height: number }) => {
-    const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
-    let panX = 0;
-    let panY = 0;
-
-    if (mousePos.x < edgeThreshold) {
-      const distance = edgeThreshold - mousePos.x;
-      panX = (distance ** 2) / 200;
-    } else if (mousePos.x > mousePos.width - edgeThreshold) {
-      const distance = mousePos.x - (mousePos.width - edgeThreshold);
-      panX = -(distance ** 2) / 200;
-    }
-
-    if (mousePos.y < edgeThreshold) {
-      const distance = edgeThreshold - mousePos.y;
-      panY = (distance ** 2) / 200;
-    } else if (mousePos.y > mousePos.height - edgeThreshold) {
-      const distance = mousePos.y - (mousePos.height - edgeThreshold);
-      panY = -(distance ** 2) / 200;
-    }
-
-    return { x: panX, y: panY };
-  };
-
   // Handle mouse move for both pan and node drag
   const handleMouseMove = (event: React.MouseEvent) => {
-    if (isPanning) {
-      const deltaX = event.clientX - panStart.x;
-      const deltaY = event.clientY - panStart.y;
-      setTranslateX(panOffset.x + deltaX);
-      setTranslateY(panOffset.y + deltaY);
-    }
-
     if (isDraggingNode) {
       if(!svgRef.current) return;
       const mousePos = getMouseRelativeRect(event, svgRef.current);
 
       // Calculate auto-pan velocity
       const panVelocity = getAutoPanVelocity(mousePos);
-      panVelocityRef.current = panVelocity;
-      // Start animation loop if needed
-      if (panVelocity.x !== 0 || panVelocity.y !== 0) {
-        panAnimation.requestFrame();
-      }
+      panning.updateTranslation((vec2) => vec2.add(panVelocity));
 
       // Convert to graph space and calculate node velocity
-      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).translate(-translateX, -translateY).divide(scale);
+      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
       const targetX = graphPos.x + nodeDragOffset.x;
       const targetY = graphPos.y + nodeDragOffset.y;
 
@@ -534,11 +501,8 @@ export function GraphView({ value }: GraphViewProps) {
 
   // Stop dragging helper
   const stopDragging = useCallback(() => {
-    setIsPanning(false);
     setIsDraggingNode(null);
-    panVelocityRef.current = { x: 0, y: 0 };
     draggedNodeVelocityRef.current = { nodeId: null, x: 0, y: 0 };
-    panAnimation.cancelFrameRequest();
     dragNodeAnimation.cancelFrameRequest();
   }, []);
 
@@ -554,7 +518,7 @@ export function GraphView({ value }: GraphViewProps) {
 
     if(!svgRef.current) return;
 
-    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).translate(-translateX, -translateY).divide(scale);
+    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
     setIsDraggingNode(nodeId);
     setNodeDragOffset({
       x: node.x - graphPos.x,
@@ -574,13 +538,12 @@ export function GraphView({ value }: GraphViewProps) {
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
-        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         className={classNames("select-none", {
-          'cursor-grabbing': isPanning,
-          'cursor-grab': !isPanning
+          'cursor-grabbing': panning.active,
+          'cursor-grab': !panning.active
         })}
         style={{
           width: '100%',
@@ -604,7 +567,7 @@ export function GraphView({ value }: GraphViewProps) {
           </marker>
         </defs>
 
-        <g transform={`translate(${translateX}, ${translateY}) scale(${scale})`}>
+        <g transform={`translate(${panning.translation.x}, ${panning.translation.y}) scale(${scale})`}>
           {/* Regular edges (bottom layer) */}
           {regularEdges.map(edge => (
             <GraphEdgeComponent key={edge.id} edge={edge} nodeLookupMap={nodeLookupMap} />

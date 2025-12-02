@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {Vec2} from './vec2';
 
 type EventTypeMap = {
   wheel: WheelEvent;
@@ -108,4 +109,68 @@ export function useElementSize<ElementType extends Element>(aspectRatio: number)
 }
 
 
+export function usePanning(
+  containerRef: React.RefObject<Element | null>,
+) {
+  const [translateX, setTranslateX] = useState(0);
+  const [translateY, setTranslateY] = useState(0);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [isPanning, setIsPanning] = useState(false);
+  const translateRef = useRef(new Vec2(0, 0));
 
+  const onMouseDown = useCallback((event: MouseEvent) => {
+    setIsPanning(event.target === containerRef.current);
+    setStartX(event.clientX);
+    setStartY(event.clientY);
+  }, [translateX, translateY, setIsPanning, setStartX, setStartY]);
+
+  const onMouseMove = useCallback((event: MouseEvent) => {
+    if (!isPanning) return;
+
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+
+    translateRef.current.x = translateX + deltaX;
+    translateRef.current.y = translateY + deltaY;
+
+    animation.requestFrame();
+  }, [isPanning, startX, startY]);
+
+  const onMouseUp = useCallback(() => {
+    if (!isPanning) return;
+
+    setTranslateX(translateRef.current.x);
+    setTranslateY(translateRef.current.y);
+    setIsPanning(false);
+  }, [isPanning, setTranslateX, setTranslateY, setIsPanning]);
+
+  const animation = useAnimation(() => {
+    setTranslateX(translateRef.current.x);
+    setTranslateY(translateRef.current.y);
+  });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('mousedown', onMouseDown as any, true);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      container.removeEventListener('mousedown', onMouseDown as any);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [onMouseDown, onMouseMove, onMouseUp]);
+
+  return {translation: new Vec2(translateX, translateY), active: isPanning,
+    setActive: setIsPanning,
+    updateTranslation: (fn: (vec2: Vec2) => void) => {
+      fn(translateRef.current);
+      if(!translateRef.current.isZero()) {
+        animation.requestFrame();
+      }
+    }};
+}
