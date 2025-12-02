@@ -4,12 +4,12 @@ Wax Editor is, at the moment, an AST compiler and virtual machine with debugging
 
 The goal is to build a low-code, visual scripting environment like Scratch, if Scratch were made for serious software development. The underlying semantics of the language will be message passing object-orientation, a la Smalltalk, though the average user will not need to have any clue what that even is. This editor will be powerful because:
 
-* Users will have powerful debugging features built in to the editor.
-* The editor will evaluate code as it's updated, removing the need for static type checks and allowing for lighting fast feedback.
-* The VM's stack will be a first class object, allowing for things like [algebraic effects](https://overreacted.io/algebraic-effects-for-the-rest-of-us/) instead of exceptions/errors.
-* There will be a dev preview of the relevant parts of the app alongside of / mixed in with the code editor.
-* It will leverage the human brain's visual as well as verbal processing abilities.
-* It seeks to compliment JavaScript, not replace it.
+- Users will have powerful debugging features built in to the editor.
+- The editor will evaluate code as it's updated, removing the need for static type checks and allowing for lighting fast feedback.
+- The VM's stack will be a first class object, allowing for things like [algebraic effects](https://overreacted.io/algebraic-effects-for-the-rest-of-us/) instead of exceptions/errors.
+- There will be a dev preview of the relevant parts of the app alongside of / mixed in with the code editor.
+- It will leverage the human brain's visual as well as verbal processing abilities.
+- It seeks to compliment JavaScript, not replace it.
 
 ## Development
 
@@ -32,9 +32,9 @@ If you are developing a production application, we recommend updating the config
 
 ```js
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
 
@@ -49,44 +49,43 @@ export default defineConfig([
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
       // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
+      reactX.configs["recommended-typescript"],
       // Enable lint rules for React DOM
       reactDom.configs.recommended,
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
-
 
 ## Deployment
 
@@ -95,7 +94,7 @@ export default defineConfig([
 This project is configured to automatically deploy to GitHub Pages when pushed to the `main` branch. The deployment workflow:
 
 1. **Build Process**: Uses Vite to build the React application
-2. **Asset Optimization**: Generates production-optimized CSS and JavaScript bundles  
+2. **Asset Optimization**: Generates production-optimized CSS and JavaScript bundles
 3. **GitHub Pages Deploy**: Automatically publishes to `https://[username].github.io/wax-editor/`
 
 ### Local Development

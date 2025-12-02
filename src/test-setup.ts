@@ -1,1 +1,1 @@
-import 'resize-observer-polyfill/dist/ResizeObserver.global';
+import "resize-observer-polyfill/dist/ResizeObserver.global";

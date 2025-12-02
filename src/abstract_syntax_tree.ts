@@ -1,4 +1,15 @@
-import {assignmentStatement, literal, returnStatement, type CompilerStep, enterProecedure, exitProcedure, getVariable, sendMessage, Compiler, halt} from "./compiler";
+import {
+  assignmentStatement,
+  literal,
+  returnStatement,
+  type CompilerStep,
+  enterProecedure,
+  exitProcedure,
+  getVariable,
+  sendMessage,
+  Compiler,
+  halt,
+} from "./compiler";
 
 export abstract class AstNode {
   /** Get a discrete list of compiler steps to compile this AST node **/
@@ -12,14 +23,14 @@ interface ProgramNodeInit {
 export class ProgramNode extends AstNode {
   body: StatementNode[];
 
-  constructor({body}: ProgramNodeInit) {
+  constructor({ body }: ProgramNodeInit) {
     super();
     this.body = body;
   }
 
   getSteps(): CompilerStep[] {
     let steps: CompilerStep[] = [];
-    for(const node of this.body) {
+    for (const node of this.body) {
       steps = steps.concat(node.getSteps());
     }
     steps.push(Compiler.plan(halt));
@@ -27,8 +38,7 @@ export class ProgramNode extends AstNode {
   }
 }
 
-abstract class StatementNode extends AstNode {
-}
+abstract class StatementNode extends AstNode {}
 
 interface ExpressionStatementNodeInit {
   value: ExpressionNode;
@@ -39,15 +49,15 @@ export class ExpressionStatementNode extends StatementNode {
   value: ExpressionNode;
   isReturn: boolean = false;
 
-  constructor({value, isReturn = false}: ExpressionStatementNodeInit) {
+  constructor({ value, isReturn = false }: ExpressionStatementNodeInit) {
     super();
     this.value = value;
     this.isReturn = isReturn;
   }
 
   getSteps(): CompilerStep[] {
-    const steps = [...this.value.getSteps()]
-    if(this.isReturn) {
+    const steps = [...this.value.getSteps()];
+    if (this.isReturn) {
       steps.push(Compiler.plan(returnStatement));
     }
     return steps;
@@ -63,19 +73,24 @@ export class AssignmentStatementNode extends StatementNode {
   variableName: string;
   valueExpression: ExpressionNode;
 
-  constructor({variableName, valueExpression: value}: AssignmentStatementNodeInit) {
+  constructor({
+    variableName,
+    valueExpression: value,
+  }: AssignmentStatementNodeInit) {
     super();
     this.variableName = variableName;
     this.valueExpression = value;
   }
 
   getSteps(): CompilerStep[] {
-    return [...this.valueExpression.getSteps(), Compiler.plan(assignmentStatement, this.variableName)];
+    return [
+      ...this.valueExpression.getSteps(),
+      Compiler.plan(assignmentStatement, this.variableName),
+    ];
   }
 }
 
-abstract class ExpressionNode extends AstNode {
-}
+abstract class ExpressionNode extends AstNode {}
 
 interface JsLiteralNodeInit {
   value: any;
@@ -84,7 +99,7 @@ interface JsLiteralNodeInit {
 export class JsLiteralNode extends ExpressionNode {
   value: any;
 
-  constructor({value}: JsLiteralNodeInit) {
+  constructor({ value }: JsLiteralNodeInit) {
     super();
     this.value = value;
   }
@@ -103,7 +118,7 @@ export class FunctionExpressionNode extends ExpressionNode {
   params: string[] = [];
   body: StatementNode[] = [];
 
-  constructor({params, body}: FunctionExpressionNodeInit) {
+  constructor({ params, body }: FunctionExpressionNodeInit) {
     super();
     this.params = params;
     this.body = body;
@@ -130,13 +145,12 @@ export class SendMessageExpressionNode extends ExpressionNode {
   message: string;
   args: ExpressionNode[] = [];
 
-  constructor({receiver, message, args}: SendMessageExpressionNodeInit) {
+  constructor({ receiver, message, args }: SendMessageExpressionNodeInit) {
     super();
     this.receiver = receiver;
     this.message = message;
     this.args = args;
   }
-
 
   getSteps(): CompilerStep[] {
     let steps = this.receiver.getSteps();
@@ -155,7 +169,7 @@ interface GetVariableNodeInit {
 export class GetVariableNode extends ExpressionNode {
   name: string;
 
-  constructor({name}: GetVariableNodeInit) {
+  constructor({ name }: GetVariableNodeInit) {
     super();
     this.name = name;
   }

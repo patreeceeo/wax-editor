@@ -1,26 +1,44 @@
-import type {AstNode} from "./abstract_syntax_tree";
-import {literal as literalInstruction, pushReturnValue, returnFromProcedure, setVariable, sendMessage as sendMessageInstruction, getVariable as getVariableInstruction, halt as haltInstruction} from "./compiled_instructions";
-import {CompiledProcedure, type CompiledInstruction, type InstructionFn} from "./compiled_procedure";
-import {invariant} from "./error";
-import type {Machine} from "./machine";
+import type { AstNode } from "./abstract_syntax_tree";
+import {
+  literal as literalInstruction,
+  pushReturnValue,
+  returnFromProcedure,
+  setVariable,
+  sendMessage as sendMessageInstruction,
+  getVariable as getVariableInstruction,
+  halt as haltInstruction,
+} from "./compiled_instructions";
+import {
+  CompiledProcedure,
+  type CompiledInstruction,
+  type InstructionFn,
+} from "./compiled_procedure";
+import { invariant } from "./error";
+import type { Machine } from "./machine";
 
 interface CompilerInit {
-  machine: Machine
+  machine: Machine;
 }
 
 export class Compiler {
-  static emit<Args extends any[]>(fn: InstructionFn<Args>, ...args: Args): CompiledInstruction<Args> {
-    return {name: fn.displayName, fn, args};
+  static emit<Args extends any[]>(
+    fn: InstructionFn<Args>,
+    ...args: Args
+  ): CompiledInstruction<Args> {
+    return { name: fn.displayName, fn, args };
   }
 
-  static plan<Args extends any[]>(fn: CompilerStepFn<Args>, ...args: Args): CompilerStep<Args> {
-    return {fn, args};
+  static plan<Args extends any[]>(
+    fn: CompilerStepFn<Args>,
+    ...args: Args
+  ): CompilerStep<Args> {
+    return { fn, args };
   }
 
   private _procedureStack: CompiledProcedure[] = [];
   private _machine: Machine;
 
-  constructor({machine}: CompilerInit) {
+  constructor({ machine }: CompilerInit) {
     this._machine = machine;
   }
 
@@ -29,7 +47,10 @@ export class Compiler {
 
   pushProcedure() {
     const id = this._nextProcedureId++;
-    const child = new CompiledProcedure({id, parentProcedure: this._topProcedure});
+    const child = new CompiledProcedure({
+      id,
+      parentProcedure: this._topProcedure,
+    });
     this._procedureStack.push(child);
     this._topProcedure = child;
   }
@@ -37,7 +58,10 @@ export class Compiler {
   popProcedure(): CompiledProcedure {
     const popped = this._procedureStack.pop();
     this._topProcedure = this._procedureStack[this._procedureStack.length - 1];
-    invariant(popped !== undefined, "Procedure stack underflow: no procedure to pop.");
+    invariant(
+      popped !== undefined,
+      "Procedure stack underflow: no procedure to pop.",
+    );
     return popped;
   }
 
@@ -46,7 +70,10 @@ export class Compiler {
   }
 
   append(...instructions: CompiledInstruction[]) {
-    invariant(this._topProcedure !== undefined, "Cannot append instructions without an active procedure");
+    invariant(
+      this._topProcedure !== undefined,
+      "Cannot append instructions without an active procedure",
+    );
     this._topProcedure.append(...instructions);
   }
 
@@ -66,52 +93,50 @@ interface CompilerStepFn<Args extends any[] = []> {
 }
 export interface CompilerStep<Args extends any[] = any> {
   fn: CompilerStepFn<Args>;
-  args: Args
+  args: Args;
 }
 export const returnStatement: CompilerStepFn = (compiler: Compiler) => {
   compiler.append(
     Compiler.emit(pushReturnValue),
-    Compiler.emit(returnFromProcedure)
-  )
-}
-export const assignmentStatement: CompilerStepFn<[string]> = (compiler: Compiler, variableName: string)  => {
-  compiler.append(
-    Compiler.emit(setVariable, variableName)
-  )
-}
-export const literal: CompilerStepFn<[any]> = (compiler: Compiler, value: any) => {
-  compiler.append(
-    Compiler.emit(literalInstruction, value)
-  )
-}
+    Compiler.emit(returnFromProcedure),
+  );
+};
+export const assignmentStatement: CompilerStepFn<[string]> = (
+  compiler: Compiler,
+  variableName: string,
+) => {
+  compiler.append(Compiler.emit(setVariable, variableName));
+};
+export const literal: CompilerStepFn<[any]> = (
+  compiler: Compiler,
+  value: any,
+) => {
+  compiler.append(Compiler.emit(literalInstruction, value));
+};
 export const enterProecedure: CompilerStepFn = (compiler: Compiler) => {
   compiler.pushProcedure();
-}
+};
 export const exitProcedure: CompilerStepFn = (compiler: Compiler) => {
   // Append implicit return if needed
-  if(compiler.currentProcedure!.at(-1)?.fn !== returnFromProcedure) {
-    compiler.append(
-      Compiler.emit(returnFromProcedure)
-    )
+  if (compiler.currentProcedure!.at(-1)?.fn !== returnFromProcedure) {
+    compiler.append(Compiler.emit(returnFromProcedure));
   }
   const procedure = compiler.popProcedure();
-  compiler.append(
-    Compiler.emit(literalInstruction, procedure)
-  )
-}
-export const sendMessage: CompilerStepFn<[string, number]> = (compiler: Compiler, message: string, argCount: number) => {
-  compiler.append(
-    Compiler.emit(sendMessageInstruction, message, argCount)
-  )
-}
-export const getVariable: CompilerStepFn<[string]> = (compiler: Compiler, variableName: string) => {
-  compiler.append(
-    Compiler.emit(getVariableInstruction, variableName),
-  )
-}
+  compiler.append(Compiler.emit(literalInstruction, procedure));
+};
+export const sendMessage: CompilerStepFn<[string, number]> = (
+  compiler: Compiler,
+  message: string,
+  argCount: number,
+) => {
+  compiler.append(Compiler.emit(sendMessageInstruction, message, argCount));
+};
+export const getVariable: CompilerStepFn<[string]> = (
+  compiler: Compiler,
+  variableName: string,
+) => {
+  compiler.append(Compiler.emit(getVariableInstruction, variableName));
+};
 export const halt: CompilerStepFn = (compiler: Compiler) => {
-  compiler.append(
-    Compiler.emit(haltInstruction)
-  )
-}
-
+  compiler.append(Compiler.emit(haltInstruction));
+};

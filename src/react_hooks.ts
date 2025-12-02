@@ -1,19 +1,22 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {Vec2} from './vec2';
-import {screenToGraphSpace} from './dom_utils';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Vec2 } from "./vec2";
+import { screenToGraphSpace } from "./dom_utils";
 
 type EventTypeMap = {
   wheel: WheelEvent;
-}
+};
 
 /**
-* Return an HTML element ref with an event listener attached.
-* Useful for adding passive event listeners to elements.
-*/
-export function useEventListener<E extends Element, EventName extends keyof EventTypeMap>(
+ * Return an HTML element ref with an event listener attached.
+ * Useful for adding passive event listeners to elements.
+ */
+export function useEventListener<
+  E extends Element,
+  EventName extends keyof EventTypeMap,
+>(
   eventName: EventName,
   handler: (event: EventTypeMap[EventName]) => void,
-  options?: boolean | AddEventListenerOptions
+  options?: boolean | AddEventListenerOptions,
 ) {
   const elementRef = useRef<E | null>(null);
 
@@ -55,18 +58,23 @@ interface Animation {
 }
 
 /**
-* Hook for using requestAnimationFrame in a React component.
-* @return {Animation} to control the animation loop.
-*/
-export function useAnimation(animate: (deltaTime: number, time: number) => void): Animation {
+ * Hook for using requestAnimationFrame in a React component.
+ * @return {Animation} to control the animation loop.
+ */
+export function useAnimation(
+  animate: (deltaTime: number, time: number) => void,
+): Animation {
   const requestRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
 
   const continueAnimation = useCallback(() => {
-    requestRef.current = requestAnimationFrame((time => {
-      animate(prevTimeRef.current !== null ? time - prevTimeRef.current : 0, time);
+    requestRef.current = requestAnimationFrame((time) => {
+      animate(
+        prevTimeRef.current !== null ? time - prevTimeRef.current : 0,
+        time,
+      );
       prevTimeRef.current = time;
-    }));
+    });
   }, [animate]);
 
   const cancelAnimation = useCallback(() => {
@@ -87,34 +95,33 @@ export function useAnimation(animate: (deltaTime: number, time: number) => void)
 }
 
 /**
-* Hook for tracking the dimensions of an HTML element.
-*/
-export function useElementSize<ElementType extends Element>(aspectRatio: number): [React.RefObject<ElementType | null>, {width: number; height: number}] {
+ * Hook for tracking the dimensions of an HTML element.
+ */
+export function useElementSize<ElementType extends Element>(
+  aspectRatio: number,
+): [React.RefObject<ElementType | null>, { width: number; height: number }] {
   const elementRef = useRef<ElementType | null>(null);
-  const [size, setSize] = useState({width: aspectRatio, height: 1});
+  const [size, setSize] = useState({ width: aspectRatio, height: 1 });
 
   useEffect(() => {
     const element = elementRef.current;
     if (element) {
       const rect = element.getBoundingClientRect();
-      setSize({width: rect.width, height: rect.height});
+      setSize({ width: rect.width, height: rect.height });
     }
   }, [setSize]);
 
   useResizeObserver(elementRef, (entries) => {
     for (let entry of entries) {
-      const {width, height} = entry.contentRect;
-      setSize({width, height});
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
     }
   });
 
   return [elementRef, size];
 }
 
-
-export function usePanning(
-  containerRef: React.RefObject<Element | null>,
-) {
+export function usePanning(containerRef: React.RefObject<Element | null>) {
   const [translateX, setTranslateX] = useState(0);
   const [translateY, setTranslateY] = useState(0);
   const [startX, setStartX] = useState(0);
@@ -122,23 +129,29 @@ export function usePanning(
   const [isPanning, setIsPanning] = useState(false);
   const translateRef = useRef(new Vec2(0, 0));
 
-  const onMouseDown = useCallback((event: MouseEvent) => {
-    setIsPanning(event.target === containerRef.current);
-    setStartX(event.clientX);
-    setStartY(event.clientY);
-  }, [translateX, translateY, setIsPanning, setStartX, setStartY]);
+  const onMouseDown = useCallback(
+    (event: MouseEvent) => {
+      setIsPanning(event.target === containerRef.current);
+      setStartX(event.clientX);
+      setStartY(event.clientY);
+    },
+    [translateX, translateY, setIsPanning, setStartX, setStartY],
+  );
 
-  const onMouseMove = useCallback((event: MouseEvent) => {
-    if (!isPanning) return;
+  const onMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (!isPanning) return;
 
-    const deltaX = event.clientX - startX;
-    const deltaY = event.clientY - startY;
+      const deltaX = event.clientX - startX;
+      const deltaY = event.clientY - startY;
 
-    translateRef.current.x = translateX + deltaX;
-    translateRef.current.y = translateY + deltaY;
+      translateRef.current.x = translateX + deltaX;
+      translateRef.current.y = translateY + deltaY;
 
-    animation.requestFrame();
-  }, [isPanning, startX, startY]);
+      animation.requestFrame();
+    },
+    [isPanning, startX, startY],
+  );
 
   const onMouseUp = useCallback(() => {
     if (!isPanning) return;
@@ -157,25 +170,28 @@ export function usePanning(
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('mousedown', onMouseDown as any, true);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    container.addEventListener("mousedown", onMouseDown as any, true);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
 
     return () => {
-      container.removeEventListener('mousedown', onMouseDown as any);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      container.removeEventListener("mousedown", onMouseDown as any);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, [onMouseDown, onMouseMove, onMouseUp]);
 
-  return {translation: new Vec2(translateX, translateY), active: isPanning,
+  return {
+    translation: new Vec2(translateX, translateY),
+    active: isPanning,
     setActive: setIsPanning,
     updateTranslation: (fn: (vec2: Vec2) => void) => {
       fn(translateRef.current);
-      if(!translateRef.current.isZero()) {
+      if (!translateRef.current.isZero()) {
         animation.requestFrame();
       }
-    }};
+    },
+  };
 }
 
 interface DragState {
@@ -184,7 +200,10 @@ interface DragState {
 
 interface UseSvgChildDraggingOptions {
   svgRef: React.RefObject<SVGSVGElement | null>;
-  getAutoPanVelocity?: (svgElement: SVGSVGElement, event: React.MouseEvent) => Vec2;
+  getAutoPanVelocity?: (
+    svgElement: SVGSVGElement,
+    event: React.MouseEvent,
+  ) => Vec2;
   panning: ReturnType<typeof usePanning>;
   scale: number;
   onPositionUpdate: (elementId: string, position: Vec2) => void;
@@ -209,18 +228,23 @@ export function useSvgChildDragging({
   scale,
 }: UseSvgChildDraggingOptions): UseSvgChildDraggingReturn {
   const [dragState, setDragState] = useState<DragState>({
-    draggedElementId: null
+    draggedElementId: null,
   });
 
   const positionRef = useRef<Vec2>(new Vec2(0, 0));
 
-  const handleChildMouseDown = useCallback((elementId: string, event: React.MouseEvent) => {
+  const handleChildMouseDown = useCallback(
+    (elementId: string, event: React.MouseEvent) => {
       setDragState({ draggedElementId: elementId });
 
       const svgElement = svgRef.current;
       if (!svgElement) return;
 
-      const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgElement)
+      const graphPos = screenToGraphSpace(
+        event.clientX,
+        event.clientY,
+        svgElement,
+      )
         .subtract(panning.translation)
         .divide(scale);
 
@@ -228,33 +252,42 @@ export function useSvgChildDragging({
       positionRef.current = graphPos;
 
       animation.requestFrame();
-  }, [svgRef, panning]);
+    },
+    [svgRef, panning],
+  );
 
-  const handleSvgMouseMove = useCallback((event: React.MouseEvent) => {
-    if (!dragState.draggedElementId) {
-      return;
-    }
-
-    const svgElement = svgRef.current;
-    if (!svgElement) return;
-
-    // Handle auto-panning
-    if (getAutoPanVelocity && panning) {
-      const panVelocity = getAutoPanVelocity(svgElement, event);
-      if (!panVelocity.isZero()) {
-        panning.updateTranslation((vec2) => vec2.add(panVelocity));
+  const handleSvgMouseMove = useCallback(
+    (event: React.MouseEvent) => {
+      if (!dragState.draggedElementId) {
+        return;
       }
-    }
 
-    // Convert mouse position to graph space using dom_utils
-    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgElement)
-      .subtract(panning.translation)
-      .divide(scale);
+      const svgElement = svgRef.current;
+      if (!svgElement) return;
 
-    // Update target position
-    positionRef.current = graphPos;
-    animation.requestFrame();
-  }, [dragState.draggedElementId, svgRef, getAutoPanVelocity, panning]);
+      // Handle auto-panning
+      if (getAutoPanVelocity && panning) {
+        const panVelocity = getAutoPanVelocity(svgElement, event);
+        if (!panVelocity.isZero()) {
+          panning.updateTranslation((vec2) => vec2.add(panVelocity));
+        }
+      }
+
+      // Convert mouse position to graph space using dom_utils
+      const graphPos = screenToGraphSpace(
+        event.clientX,
+        event.clientY,
+        svgElement,
+      )
+        .subtract(panning.translation)
+        .divide(scale);
+
+      // Update target position
+      positionRef.current = graphPos;
+      animation.requestFrame();
+    },
+    [dragState.draggedElementId, svgRef, getAutoPanVelocity, panning],
+  );
 
   const handleSvgMouseUp = useCallback(() => {
     setDragState({ draggedElementId: null });
@@ -271,8 +304,6 @@ export function useSvgChildDragging({
     handleChildMouseDown,
     handleSvgMouseMove,
     handleSvgMouseUp,
-    handleSvgMouseLeave: handleSvgMouseUp
+    handleSvgMouseLeave: handleSvgMouseUp,
   };
 }
-
-

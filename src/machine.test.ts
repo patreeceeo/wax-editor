@@ -1,8 +1,8 @@
-import {beforeEach, describe, expect, test} from "vitest";
-import {Machine} from "./machine";
-import {CompiledProcedure} from "./compiled_procedure";
-import {literal, halt} from "./compiled_instructions";
-import {Compiler} from "./compiler";
+import { beforeEach, describe, expect, test } from "vitest";
+import { Machine } from "./machine";
+import { CompiledProcedure } from "./compiled_procedure";
+import { literal, halt } from "./compiled_instructions";
+import { Compiler } from "./compiler";
 
 describe("Machine Critical Bug Prevention", () => {
   let machine: Machine;
@@ -15,10 +15,10 @@ describe("Machine Critical Bug Prevention", () => {
   const createTestProcedure = (id: string, instructions: any[] = []) => {
     return new CompiledProcedure({
       id,
-      instructions: instructions.length > 0 ? instructions : [
-        Compiler.emit(literal, 42),
-        Compiler.emit(halt)
-      ]
+      instructions:
+        instructions.length > 0
+          ? instructions
+          : [Compiler.emit(literal, 42), Compiler.emit(halt)],
     });
   };
 
@@ -53,7 +53,7 @@ describe("Machine Critical Bug Prevention", () => {
     test("getInstruction throws when PC exceeds procedure length", () => {
       const procedure = createTestProcedure("main", [
         Compiler.emit(literal, 1),
-        Compiler.emit(halt)
+        Compiler.emit(halt),
       ]);
 
       machine.loadMemory("main", procedure);
@@ -82,11 +82,11 @@ describe("Machine Critical Bug Prevention", () => {
     test("procedure contexts maintain correct isolation", () => {
       const main = createTestProcedure("main", [
         Compiler.emit(literal, 100),
-        Compiler.emit(halt)
+        Compiler.emit(halt),
       ]);
       const nested = createTestProcedure("nested", [
         Compiler.emit(literal, 200),
-        Compiler.emit(halt)
+        Compiler.emit(halt),
       ]);
 
       machine.loadMemory("main", main);
@@ -114,11 +114,11 @@ describe("Machine Critical Bug Prevention", () => {
     test("variable scoping is preserved across procedure calls", () => {
       const main = createTestProcedure("main", [
         Compiler.emit(literal, "main_var"),
-        Compiler.emit(halt)
+        Compiler.emit(halt),
       ]);
       const nested = createTestProcedure("nested", [
         Compiler.emit(literal, "nested_var"),
-        Compiler.emit(halt)
+        Compiler.emit(halt),
       ]);
 
       machine.loadMemory("main", main);
@@ -145,9 +145,18 @@ describe("Machine Critical Bug Prevention", () => {
   describe("Procedure lifecycle integrity", () => {
     test("procedure calls and returns maintain correct execution order", () => {
       const procedures = [
-        createTestProcedure("level1", [Compiler.emit(literal, 1), Compiler.emit(halt)]),
-        createTestProcedure("level2", [Compiler.emit(literal, 2), Compiler.emit(halt)]),
-        createTestProcedure("level3", [Compiler.emit(literal, 3), Compiler.emit(halt)])
+        createTestProcedure("level1", [
+          Compiler.emit(literal, 1),
+          Compiler.emit(halt),
+        ]),
+        createTestProcedure("level2", [
+          Compiler.emit(literal, 2),
+          Compiler.emit(halt),
+        ]),
+        createTestProcedure("level3", [
+          Compiler.emit(literal, 3),
+          Compiler.emit(halt),
+        ]),
       ];
 
       machine.loadMemory("main", procedures[0]);
@@ -191,7 +200,11 @@ describe("Machine Critical Bug Prevention", () => {
       expect(machine.getCallStack()).toEqual(["nested", "main"]);
 
       machine.invokeProcedure(deeplyNested, []);
-      expect(machine.getCallStack()).toEqual(["deeplyNested", "nested", "main"]);
+      expect(machine.getCallStack()).toEqual([
+        "deeplyNested",
+        "nested",
+        "main",
+      ]);
 
       machine.returnFromProcedure();
       expect(machine.getCallStack()).toEqual(["nested", "main"]);

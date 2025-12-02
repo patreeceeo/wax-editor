@@ -1,9 +1,9 @@
-import {beforeEach, describe, expect, test} from "vitest";
-import {Machine} from "../machine";
-import {_getInitialState, _reducer} from "./Debugger";
-import {literal, add, halt} from "../compiled_instructions";
-import {Compiler} from "../compiler";
-import {CompiledProcedure} from "../compiled_procedure";
+import { beforeEach, describe, expect, test } from "vitest";
+import { Machine } from "../machine";
+import { _getInitialState, _reducer } from "./Debugger";
+import { literal, add, halt } from "../compiled_instructions";
+import { Compiler } from "../compiler";
+import { CompiledProcedure } from "../compiled_procedure";
 
 const program = new CompiledProcedure({
   id: "test",
@@ -11,8 +11,8 @@ const program = new CompiledProcedure({
     Compiler.emit(literal, 1),
     Compiler.emit(literal, 2),
     Compiler.emit(add),
-    Compiler.emit(halt)
-  ]
+    Compiler.emit(halt),
+  ],
 });
 
 const machine = new Machine();
@@ -47,7 +47,7 @@ describe("Debugger actions", () => {
     beforeEach(() => {
       _state = _getInitialState(machine);
       // Step forward to middle state
-      _state = _reducer(_state, { type: "NEXT"  });
+      _state = _reducer(_state, { type: "NEXT" });
     });
     test("step back", () => {
       const next = _reducer(_state, { type: "PREV" });
@@ -84,7 +84,7 @@ describe("Debugger actions", () => {
     beforeEach(() => {
       _state = _getInitialState(machine);
       // Run to end state
-      _state = _reducer(_state, { type: "RUN_TO_END"  });
+      _state = _reducer(_state, { type: "RUN_TO_END" });
     });
 
     test("step back", () => {

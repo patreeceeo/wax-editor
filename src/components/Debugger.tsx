@@ -1,11 +1,11 @@
-import {useCallback, useReducer} from 'react';
-import {Machine} from '../machine';
-import {MachineProvider} from './MachineContext';
-import JsonDiff from './JsonDiff';
-import {BackIcon, FastForwardIcon, PlayIcon, RewindIcon} from './Icons';
-import Button from './Button';
-import ProgramViewer from './ProgramViewer';
-import {GraphView} from './GraphView';
+import { useCallback, useReducer } from "react";
+import { Machine } from "../machine";
+import { MachineProvider } from "./MachineContext";
+import JsonDiff from "./JsonDiff";
+import { BackIcon, FastForwardIcon, PlayIcon, RewindIcon } from "./Icons";
+import Button from "./Button";
+import ProgramViewer from "./ProgramViewer";
+import { GraphView } from "./GraphView";
 
 interface DebuggerProps {
   machine: Machine;
@@ -19,14 +19,14 @@ interface DebuggerState {
 }
 
 type DebuggerAction =
-  | { type: 'RESET'; machine: Machine }
-  | { type: 'PREV' }
-  | { type: 'NEXT' }
-  | { type: 'RUN_TO_END' };
+  | { type: "RESET"; machine: Machine }
+  | { type: "PREV" }
+  | { type: "NEXT" }
+  | { type: "RUN_TO_END" };
 
 function stepMachine(currentMachine: Machine): Machine | null {
   const instruction = currentMachine.getInstruction();
-  if(instruction) {
+  if (instruction) {
     return currentMachine.produce((draft) => {
       draft.applyInstruction(instruction);
     });
@@ -39,39 +39,42 @@ export function _getInitialState(machine: Machine): DebuggerState {
     machines: [machine],
     isMore: true,
     machineIndex: 0,
-    stepCount: 0
+    stepCount: 0,
   };
 }
 
 /**
-* Reducer function to manage debugger state transitions.
-* Only exported for tests.
-*/
-export function _reducer(state: DebuggerState, action: DebuggerAction): DebuggerState {
+ * Reducer function to manage debugger state transitions.
+ * Only exported for tests.
+ */
+export function _reducer(
+  state: DebuggerState,
+  action: DebuggerAction,
+): DebuggerState {
   switch (action.type) {
-    case 'RESET': {
+    case "RESET": {
       return _getInitialState(action.machine);
     }
 
-    case 'PREV': {
+    case "PREV": {
       if (state.machineIndex < state.machines.length - 1) {
         return {
           ...state,
           machineIndex: state.machineIndex + 1,
           stepCount: state.stepCount - 1,
-          isMore: true
+          isMore: true,
         };
       }
       return state;
     }
 
-    case 'NEXT': {
+    case "NEXT": {
       if (state.machineIndex > 0) {
         // Navigate forward in history
         return {
           ...state,
           machineIndex: state.machineIndex - 1,
-          stepCount: state.stepCount + 1
+          stepCount: state.stepCount + 1,
         };
       } else {
         // Step current machine forward
@@ -82,25 +85,25 @@ export function _reducer(state: DebuggerState, action: DebuggerAction): Debugger
             machines: [nextMachine, ...state.machines],
             isMore: true,
             machineIndex: 0,
-            stepCount: state.stepCount + 1
+            stepCount: state.stepCount + 1,
           };
         } else {
           return {
             ...state,
-            isMore: false
+            isMore: false,
           };
         }
       }
     }
 
-    case 'RUN_TO_END': {
+    case "RUN_TO_END": {
       let stepCount = state.stepCount + state.machineIndex;
       const newMachines = [...state.machines];
 
       // Step forward to completion
-      while(true) {
+      while (true) {
         const nextMachine = stepMachine(newMachines[0]);
-        if(nextMachine) {
+        if (nextMachine) {
           newMachines.unshift(nextMachine);
           stepCount += 1;
         } else {
@@ -112,7 +115,7 @@ export function _reducer(state: DebuggerState, action: DebuggerAction): Debugger
         machines: newMachines,
         isMore: false,
         machineIndex: 0,
-        stepCount
+        stepCount,
       };
     }
 
@@ -127,25 +130,46 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
   const [state, dispatch] = useReducer(_reducer, initialState);
   const { machines, isMore, machineIndex, stepCount } = state;
   const ctx = machines[machineIndex].currentProcedureContext()!.toJSON();
-  const previousCtx = machineIndex < machines.length - 1 ? machines[machineIndex + 1].currentProcedureContext()!.toJSON() : undefined;
+  const previousCtx =
+    machineIndex < machines.length - 1
+      ? machines[machineIndex + 1].currentProcedureContext()!.toJSON()
+      : undefined;
 
   const program = machines[machineIndex].currentProcedure()!;
 
-  const clickReset = useCallback(() => dispatch({ type: 'RESET', machine: initialMachine }), [initialMachine]);
+  const clickReset = useCallback(
+    () => dispatch({ type: "RESET", machine: initialMachine }),
+    [initialMachine],
+  );
 
-  const clickPrev = useCallback(() => dispatch({ type: 'PREV' }), []);
+  const clickPrev = useCallback(() => dispatch({ type: "PREV" }), []);
 
-  const clickNext = useCallback(() => dispatch({ type: 'NEXT' }), []);
+  const clickNext = useCallback(() => dispatch({ type: "NEXT" }), []);
 
-  const clickRunToEnd = useCallback(() => dispatch({ type: 'RUN_TO_END' }), []);
+  const clickRunToEnd = useCallback(() => dispatch({ type: "RUN_TO_END" }), []);
 
   return (
-    <MachineProvider machine={machines[machineIndex]} previousMachine={machineIndex < machines.length - 1 ? machines[machineIndex + 1] : undefined}>
+    <MachineProvider
+      machine={machines[machineIndex]}
+      previousMachine={
+        machineIndex < machines.length - 1
+          ? machines[machineIndex + 1]
+          : undefined
+      }
+    >
       <div className="space-x-4">
-        <Button size="xl" onClick={clickReset} disabled={machineIndex === machines.length - 1}>
+        <Button
+          size="xl"
+          onClick={clickReset}
+          disabled={machineIndex === machines.length - 1}
+        >
           <RewindIcon size="xl" />
         </Button>
-        <Button size="xl" onClick={clickPrev} disabled={machineIndex === machines.length - 1}>
+        <Button
+          size="xl"
+          onClick={clickPrev}
+          disabled={machineIndex === machines.length - 1}
+        >
           <BackIcon size="xl" />
         </Button>
         <Button primary size="xl" onClick={clickNext} disabled={!isMore}>
@@ -169,19 +193,21 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
               <h3 className="mt-0">Variables</h3>
               <JsonDiff
                 currentContext={ctx.variables}
-                previousContext={previousCtx ? previousCtx['variables'] : undefined}
+                previousContext={
+                  previousCtx ? previousCtx["variables"] : undefined
+                }
               />
             </div>
             <div>
               <h3 className="mt-0">Stack</h3>
               <JsonDiff
                 currentContext={ctx.stack}
-                previousContext={previousCtx ? previousCtx['stack'] : undefined}
+                previousContext={previousCtx ? previousCtx["stack"] : undefined}
               />
             </div>
           </div>
         </div>
       </div>
     </MachineProvider>
-  )
+  );
 }

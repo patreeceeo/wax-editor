@@ -1,4 +1,4 @@
-import { getTextDimensions } from '../graph_utils';
+import { getTextDimensions } from "../graph_utils";
 
 interface TextRectProps {
   x: number;
@@ -11,8 +11,20 @@ interface TextRectProps {
   padding?: number;
 }
 
-export const TextRect = ({ x, y, text, transform, rectFill, rectStroke, textFill, padding = 0 }: TextRectProps) => {
-  const { width: rectWidth, height: rectHeight } = getTextDimensions(text, padding);
+export const TextRect = ({
+  x,
+  y,
+  text,
+  transform,
+  rectFill,
+  rectStroke,
+  textFill,
+  padding = 0,
+}: TextRectProps) => {
+  const { width: rectWidth, height: rectHeight } = getTextDimensions(
+    text,
+    padding,
+  );
   return (
     <>
       <rect
@@ -40,5 +52,5 @@ export const TextRect = ({ x, y, text, transform, rectFill, rectStroke, textFill
         {text}
       </text>
     </>
-  )
-}
+  );
+};

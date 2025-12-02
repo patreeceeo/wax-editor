@@ -1,5 +1,5 @@
-import { createContext, useContext, type ReactNode } from 'react';
-import type { Machine } from '../machine';
+import { createContext, useContext, type ReactNode } from "react";
+import type { Machine } from "../machine";
 
 export interface MachineContextType {
   machine: Machine;
@@ -14,7 +14,11 @@ interface MachineProviderProps {
   previousMachine?: Machine;
 }
 
-export function MachineProvider({ children, machine, previousMachine }: MachineProviderProps) {
+export function MachineProvider({
+  children,
+  machine,
+  previousMachine,
+}: MachineProviderProps) {
   const contextValue: MachineContextType = {
     machine,
     previousMachine,
@@ -30,7 +34,7 @@ export function MachineProvider({ children, machine, previousMachine }: MachineP
 export function useMachine(): MachineContextType {
   const context = useContext(MachineContext);
   if (context === null) {
-    throw new Error('useMachine must be used within a MachineProvider');
+    throw new Error("useMachine must be used within a MachineProvider");
   }
   return context;
 }

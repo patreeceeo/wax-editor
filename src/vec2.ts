@@ -2,7 +2,7 @@ export class Vec2 {
   x: number;
   y: number;
 
-  static from({x, y}: {x: number, y: number}): Vec2 {
+  static from({ x, y }: { x: number; y: number }): Vec2 {
     return new Vec2(x, y);
   }
 

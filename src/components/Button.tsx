@@ -1,16 +1,15 @@
-
 const sizeClasses = {
   xl: "text-2xl",
   l: "text-xl",
   m: "text-lg",
-  s: "text-sm"
+  s: "text-sm",
 } as const;
 
 const paddingClasses = {
   xl: "px-8 py-4",
   l: "px-6 py-3",
   m: "px-4 py-2",
-  s: "px-2 py-1"
+  s: "px-2 py-1",
 } as const;
 
 interface ButtonProps {
@@ -26,13 +25,13 @@ export default function Button({
   disabled,
   primary,
   size = "m",
-  children
+  children,
 }: ButtonProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{borderColor: 'currentColor'}}
+      style={{ borderColor: "currentColor" }}
       className={`
         cursor-pointer
         bg-white
@@ -55,5 +54,5 @@ export default function Button({
     >
       {children}
     </button>
-  )
+  );
 }
