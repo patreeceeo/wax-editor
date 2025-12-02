@@ -4,7 +4,7 @@ import { friction, getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
 import {useAnimation, useElementSize, useEventListener, usePanning } from '../react_hooks';
-import {getMouseRelativeRect, screenToGraphSpace} from '../dom_utils';
+import {screenToGraphSpace} from '../dom_utils';
 import {Vec2} from '../vec2';
 
 export interface GraphNode {
@@ -332,6 +332,7 @@ const TextRect = ({ x, y, text, transform, rectFill, rectStroke, textFill, paddi
  * Main GraphView component
  */
 export function GraphView({ value }: GraphViewProps) {
+  const [containerRef, dimensions] = useElementSize<HTMLDivElement>(4/3);
   const [scale, setScale] = useState(1);
   const svgRef = useEventListener<SVGSVGElement, "wheel">("wheel", (event) => {
       event.preventDefault();
@@ -341,30 +342,32 @@ export function GraphView({ value }: GraphViewProps) {
 
   /** Panning */
   const panning = usePanning(svgRef)
-  const getAutoPanVelocity = (mousePos: { x: number; y: number; width: number; height: number }) => {
+  const getAutoPanVelocity = useCallback((element: SVGSVGElement, event: React.MouseEvent) => {
+    const rect = element.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     const edgeThreshold = Math.min(dimensions.width, dimensions.height) * 0.2;
     const vel = new Vec2(0, 0);
 
-    if (mousePos.x < edgeThreshold) {
-      const distance = edgeThreshold - mousePos.x;
+    if (x < edgeThreshold) {
+      const distance = edgeThreshold - x;
       vel.x = (distance ** 2) / 200;
-    } else if (mousePos.x > mousePos.width - edgeThreshold) {
-      const distance = mousePos.x - (mousePos.width - edgeThreshold);
+    } else if (x > rect.width - edgeThreshold) {
+      const distance = x - (rect.width - edgeThreshold);
       vel.x = -(distance ** 2) / 200;
     }
 
-    if (mousePos.y < edgeThreshold) {
-      const distance = edgeThreshold - mousePos.y;
+    if (y < edgeThreshold) {
+      const distance = edgeThreshold - y;
       vel.y = (distance ** 2) / 200;
-    } else if (mousePos.y > mousePos.height - edgeThreshold) {
-      const distance = mousePos.y - (mousePos.height - edgeThreshold);
+    } else if (y > rect.height - edgeThreshold) {
+      const distance = y - (rect.height - edgeThreshold);
       vel.y = -(distance ** 2) / 200;
     }
 
     return vel;
-  };
+  }, [dimensions]);
 
-  const [containerRef, dimensions] = useElementSize<HTMLDivElement>(4/3);
   const [topNodeId, setTopNodeId] = useState<string | null>(null);
   const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
   const [nodeDragOffset, setNodeDragOffset] = useState({ x: 0, y: 0 });
@@ -475,10 +478,9 @@ export function GraphView({ value }: GraphViewProps) {
   const handleMouseMove = (event: React.MouseEvent) => {
     if (isDraggingNode) {
       if(!svgRef.current) return;
-      const mousePos = getMouseRelativeRect(event, svgRef.current);
 
       // Calculate auto-pan velocity
-      const panVelocity = getAutoPanVelocity(mousePos);
+      const panVelocity = getAutoPanVelocity(svgRef.current, event);
       panning.updateTranslation((vec2) => vec2.add(panVelocity));
 
       // Convert to graph space and calculate node velocity
