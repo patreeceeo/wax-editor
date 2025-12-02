@@ -410,10 +410,7 @@ export function GraphView({ value }: GraphViewProps) {
 
     const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
     setIsDraggingNode(nodeId);
-    setNodeDragOffset({
-      x: node.x - graphPos.x,
-      y: node.y - graphPos.y
-    });
+    setNodeDragOffset(new Vec2(node.x - graphPos.x, node.y - graphPos.y));
     setTopNodeId(nodeId);
   };
   const dragNodeAnimation = useAnimation((deltaTime) => {
