@@ -66,7 +66,6 @@ export class ProcedureContext {
     this._stack.push(value);
   }
   pop() {
-    invariant(this._stack.length > 0, "Cannot pop from empty stack");
     const popped = this._stack.pop();
     return popped;
   }
