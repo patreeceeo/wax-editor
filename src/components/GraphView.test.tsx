@@ -2,8 +2,8 @@ import { describe, test, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { GraphView } from "./GraphView";
 
-vi.mock(import("./shared/DataVisualizationUtils.ts"), async (importOriginal) => {
-    const originalModule = await importOriginal<typeof import("./shared/DataVisualizationUtils.ts")>();
+vi.mock(import("../graph_utils.ts"), async (importOriginal) => {
+    const originalModule = await importOriginal<typeof import("../graph_utils.ts")>();
     return {
       ...originalModule,
       getRenderingContextForFont: () => ({
