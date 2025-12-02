@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { falseClass, nilClass, numberClass, procedureClass, stringClass, trueClass, WaxClass } from '../wax_classes';
-import { friction, getObjectId, isObjectOrArray } from '../utils';
+import { getObjectId, isObjectOrArray } from '../utils';
 import { getObjectEntries, getTextDimensions, getLineRectangleIntersection } from './shared/DataVisualizationUtils';
 import classNames from 'classnames';
 import {useAnimation, useElementSize, useEventListener, usePanning } from '../react_hooks';
@@ -36,7 +36,6 @@ interface GraphViewProps {
 const graphDataCache = new Map<string, GraphData>();
 const graphDataWeakCache = new WeakMap<object, GraphData>();
 
-const DRAG_NODE_RESPONSIVENESS = 0.01; // Higher is more responsive
 const LEAF_CLASSES = [stringClass, numberClass, trueClass, falseClass, nilClass, procedureClass];
 
 /**
@@ -370,63 +369,42 @@ export function GraphView({ value }: GraphViewProps) {
   
   /** Node dragging */
   const [isDraggingNode, setIsDraggingNode] = useState<string | null>(null);
-  const [nodeDragOffset, setNodeDragOffset] = useState(new Vec2(0, 0));
-  const draggedNodeVelocityRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
+  const draggedNodePositionRef = useRef<{ nodeId: string | null; x: number; y: number }>({ nodeId: null, x: 0, y: 0 });
+  const handleNodeMouseDown = (nodeId: string) => {
+    setIsDraggingNode(nodeId);
+    setTopNodeId(nodeId);
+  };
   const handleMouseMove = (event: React.MouseEvent) => {
+    if(!svgRef.current) return;
     if (isDraggingNode) {
-      if(!svgRef.current) return;
-
       // Calculate auto-pan velocity
       const panVelocity = getAutoPanVelocity(svgRef.current, event);
       panning.updateTranslation((vec2) => vec2.add(panVelocity));
 
-      // Convert to graph space and calculate node velocity
       const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
-      const targetX = graphPos.x + nodeDragOffset.x;
-      const targetY = graphPos.y + nodeDragOffset.y;
 
-      // Get current node position for responsive velocity calculation
-      const currentNode = nodeLookupMap.get(isDraggingNode);
-      if (currentNode) {
-        draggedNodeVelocityRef.current = {
-          nodeId: isDraggingNode,
-          x: (targetX - currentNode.x) * DRAG_NODE_RESPONSIVENESS,
-          y: (targetY - currentNode.y) * DRAG_NODE_RESPONSIVENESS
-        };
-        dragNodeAnimation.requestFrame();
-      }
+      const dragNodeInfo = draggedNodePositionRef.current;
+      dragNodeInfo.nodeId = isDraggingNode;
+      dragNodeInfo.x = graphPos.x;
+      dragNodeInfo.y = graphPos.y;
+      dragNodeAnimation.requestFrame();
     }
   };
   const stopDragging = useCallback(() => {
     setIsDraggingNode(null);
-    draggedNodeVelocityRef.current = { nodeId: null, x: 0, y: 0 };
+    draggedNodePositionRef.current = { nodeId: null, x: 0, y: 0 };
     dragNodeAnimation.cancelFrameRequest();
   }, []);
-  const handleNodeMouseDown = (nodeId: string, event: React.MouseEvent) => {
-    const node = nodeLookupMap.get(nodeId);
-    if (!node) return;
-
-    if(!svgRef.current) return;
-
-    const graphPos = screenToGraphSpace(event.clientX, event.clientY, svgRef.current).subtract(panning.translation).divide(scale);
-    setIsDraggingNode(nodeId);
-    setNodeDragOffset(new Vec2(node.x - graphPos.x, node.y - graphPos.y));
-    setTopNodeId(nodeId);
-  };
-  const dragNodeAnimation = useAnimation((deltaTime) => {
-    const { nodeId, x: vx, y: vy } = draggedNodeVelocityRef.current;
-    if (nodeId && (vx !== 0 || vy !== 0)) {
-      setGraphData(prevData => ({
-        ...prevData,
-        nodes: prevData.nodes.map(node =>
-          node.id === nodeId
-            ? { ...node, x: node.x + vx * deltaTime, y: node.y + vy * deltaTime }
-            : node
-        )
-      }));
-      draggedNodeVelocityRef.current.x = friction(draggedNodeVelocityRef.current.x, 0.01, deltaTime);
-      draggedNodeVelocityRef.current.y = friction(draggedNodeVelocityRef.current.y, 0.01, deltaTime);
-    }
+  const dragNodeAnimation = useAnimation(() => {
+    const { nodeId, x, y } = draggedNodePositionRef.current;
+    setGraphData(prevData => ({
+      ...prevData,
+      nodes: prevData.nodes.map(node =>
+        node.id === nodeId
+          ? { ...node, x, y}
+          : node
+      )
+    }));
   });
   /** End node dragging */
 
