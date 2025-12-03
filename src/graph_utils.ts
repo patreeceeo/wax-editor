@@ -140,12 +140,234 @@ export function objectToGraph(
 }
 
 /**
+ * Configuration options for force-directed graph layout
+ */
+export interface ForceLayoutConfig {
+  /** Number of iterations to run the simulation */
+  iterations: number;
+  /** Strength of repulsive forces between unconnected nodes */
+  repulsionStrength: number;
+  /** Strength of attractive forces between connected nodes */
+  attractionStrength: number;
+  /** Optimal distance between connected nodes */
+  idealLinkDistance: number;
+  /** Minimum distance between any nodes to prevent overlap */
+  minNodeDistance: number;
+  /** How much velocity is preserved between iterations (damping) */
+  damping: number;
+  /** Maximum distance a node can move in a single iteration */
+  maxDisplacement: number;
+}
+
+// Default configuration
+const forceLayoutConfig: ForceLayoutConfig = {
+  iterations: 500,
+  repulsionStrength: 20000,
+  attractionStrength: 0.01,
+  idealLinkDistance: 200,
+  minNodeDistance: 50,
+  damping: 1,
+  maxDisplacement: 500,
+};
+
+/**
+ * Layout graph nodes using a force-directed algorithm that simulates
+ * repulsive forces between all nodes and attractive forces between connected nodes
+ *
+ * @param graphData - The graph structure containing nodes and edges
+ * @param width - Available width for the layout
+ * @param height - Available height for the layout
+ * @param config - Optional configuration for customizing the layout behavior
+ * @returns Graph data with x,y positions assigned to all nodes
+ */
+export function forceDirectedLayout(graphData: GraphData): GraphData {
+  // Create a copy to avoid modifying the original
+  const layoutData = {
+    nodes: graphData.nodes.map((node) => ({ ...node })),
+    edges: [...graphData.edges],
+  };
+
+  // Run the simulation
+  for (let i = 0; i < forceLayoutConfig.iterations; i++) {
+    // Calculate forces
+    const repulsiveForces = calculateRepulsiveForces(
+      layoutData.nodes,
+      forceLayoutConfig,
+    );
+    const attractiveForces = calculateAttractiveForces(
+      layoutData.nodes,
+      layoutData.edges,
+      forceLayoutConfig,
+    );
+
+    // Combine forces
+    const combinedForces = layoutData.nodes.map((_, index) => ({
+      x: repulsiveForces[index].x + attractiveForces[index].x,
+      y: repulsiveForces[index].y + attractiveForces[index].y,
+    }));
+
+    // Apply forces to update positions
+    applyForcesToNodes(layoutData.nodes, combinedForces, forceLayoutConfig);
+  }
+
+  return { nodes: layoutData.nodes, edges: layoutData.edges };
+}
+
+/**
+ * Calculate repulsive forces between all pairs of nodes to prevent overlap
+ * and distribute nodes evenly across the available space
+ *
+ * @param nodes - Array of all nodes in the graph
+ * @param config - Layout configuration containing repulsion parameters
+ * @returns Array of force vectors to be applied to each node
+ */
+function calculateRepulsiveForces(
+  nodes: GraphNode[],
+  config: ForceLayoutConfig,
+): Array<{ x: number; y: number }> {
+  const forces: Array<{ x: number; y: number }> = nodes.map(() => ({
+    x: 0,
+    y: 0,
+  }));
+
+  // Calculate repulsive forces between all pairs of nodes
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const nodeA = nodes[i];
+      const nodeB = nodes[j];
+
+      const dx = nodeA.x - nodeB.x;
+      const dy = nodeA.y - nodeB.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // Avoid division by zero and apply minimum distance
+      const effectiveDistance = Math.max(distance, config.minNodeDistance);
+
+      if (effectiveDistance > 0) {
+        // Coulomb's law: F = k * q1 * q2 / r^2
+        const force =
+          config.repulsionStrength / (effectiveDistance * effectiveDistance);
+        const fx = (dx / effectiveDistance) * force;
+        const fy = (dy / effectiveDistance) * force;
+
+        // Apply equal and opposite forces
+        forces[i].x += fx;
+        forces[i].y += fy;
+        forces[j].x -= fx;
+        forces[j].y -= fy;
+      }
+    }
+  }
+
+  return forces;
+}
+
+/**
+ * Calculate attractive forces between connected nodes to keep
+ * related nodes in the same neighborhood and reduce edge lengths
+ *
+ * @param nodes - Array of all nodes in the graph
+ * @param edges - Array of edges defining node connections
+ * @param config - Layout configuration containing attraction parameters
+ * @returns Array of force vectors to be applied to each node
+ */
+function calculateAttractiveForces(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  config: ForceLayoutConfig,
+): Array<{ x: number; y: number }> {
+  const forces: Array<{ x: number; y: number }> = nodes.map(() => ({
+    x: 0,
+    y: 0,
+  }));
+
+  // Create a map from node id to node index for faster lookup
+  const nodeIndexMap = new Map<string, number>();
+  nodes.forEach((node, index) => {
+    nodeIndexMap.set(node.id, index);
+  });
+
+  // Calculate attractive forces for each edge
+  for (const edge of edges) {
+    const sourceIndex = nodeIndexMap.get(edge.source);
+    const targetIndex = nodeIndexMap.get(edge.target);
+
+    if (sourceIndex !== undefined && targetIndex !== undefined) {
+      const sourceNode = nodes[sourceIndex];
+      const targetNode = nodes[targetIndex];
+
+      const dx = targetNode.x - sourceNode.x;
+      const dy = targetNode.y - sourceNode.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > 0) {
+        // Hooke's law: F = k * (x - x0)
+        // Force proportional to displacement from ideal distance
+        const displacement = distance - config.idealLinkDistance;
+        const force = config.attractionStrength * displacement;
+
+        const fx = (dx / distance) * force;
+        const fy = (dy / distance) * force;
+
+        // Apply equal and opposite forces
+        forces[sourceIndex].x += fx;
+        forces[sourceIndex].y += fy;
+        forces[targetIndex].x -= fx;
+        forces[targetIndex].y -= fy;
+      }
+    }
+  }
+
+  return forces;
+}
+
+/**
+ * Apply calculated forces to node positions while respecting
+ * movement constraints, but allowing nodes to extend beyond boundaries
+ *
+ * @param nodes - Array of nodes to be positioned
+ * @param forces - Combined force vectors for each node
+ * @param width - Available width for positioning (ignored for boundary constraints)
+ * @param height - Available height for positioning (ignored for boundary constraints)
+ * @param config - Layout configuration containing movement constraints
+ */
+function applyForcesToNodes(
+  nodes: GraphNode[],
+  forces: Array<{ x: number; y: number }>,
+  config: ForceLayoutConfig,
+): void {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const force = forces[i];
+
+    // Apply force directly with damping (simple approach for force-directed layout)
+    const dx = force.x * config.damping;
+    const dy = force.y * config.damping;
+
+    // Limit maximum displacement
+    const displacement = Math.sqrt(dx * dx + dy * dy);
+    let appliedX = dx;
+    let appliedY = dy;
+
+    if (displacement > config.maxDisplacement) {
+      const scale = config.maxDisplacement / displacement;
+      appliedX *= scale;
+      appliedY *= scale;
+    }
+
+    // Update position - no boundary constraints applied
+    node.x += appliedX;
+    node.y += appliedY;
+  }
+}
+
+/**
  * Assuming the first node is the root, arrange its children around it in a centered circle.
  * For each of those children, arrange their children in a smaller circle around them, and so on.
  *
  * Returns the modified graph data with x,y positions for each node.
  */
-export function hierarchicalLayout(
+export function fireworksLayout(
   graphData: GraphData,
   width: number,
   height: number,
@@ -157,7 +379,7 @@ export function hierarchicalLayout(
     graphData.nodes[0],
     graphData,
     new Set<string>(),
-    300,
+    400,
     startNode.x,
     startNode.y,
   );
@@ -178,8 +400,6 @@ function layoutNode(
     .filter((edge) => edge.source === node.id)
     .map((edge) => graphData.nodes.find((n) => n.id === edge.target)!);
 
-  // Radius decreases at each level, but less so with more children
-  const newRadius = (radius * Math.log(children.length + 2)) / 2;
   const angleFromCenter = Math.atan2(node.y - centerY, node.x - centerX);
 
   children
@@ -188,10 +408,10 @@ function layoutNode(
       // Arrange around the parent but oriented away from center
       const angle =
         angleFromCenter + (index / children.length) * Math.PI - Math.PI / 2;
-      child.x = node.x + newRadius * Math.cos(angle);
-      child.y = node.y + newRadius * Math.sin(angle);
+      child.x = node.x + radius * Math.cos(angle);
+      child.y = node.y + radius * Math.sin(angle);
       // Recursively layout child's children
-      layoutNode(child, graphData, visited, newRadius, centerX, centerY);
+      layoutNode(child, graphData, visited, radius, centerX, centerY);
     });
 }
 

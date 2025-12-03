@@ -19,8 +19,10 @@ import { Vec2 } from "../vec2";
 import { GraphNodeComponent } from "./GraphNode";
 import { GraphEdgeComponent } from "./GraphEdge";
 import {
-  hierarchicalLayout,
+  forceDirectedLayout,
+  fireworksLayout,
   objectToGraph,
+  randomLayout,
   type GraphData,
   type GraphNode,
 } from "../graph_utils";
@@ -134,12 +136,9 @@ export function GraphView({ value }: GraphViewProps) {
       const waxClass = WaxClass.forJsObject(value);
       return LEAF_CLASSES.includes(waxClass);
     });
-    const layoutData = hierarchicalLayout(
-      data,
-      dimensions.width,
-      dimensions.height,
-    );
-    setGraphData(layoutData);
+    const data2 = fireworksLayout(data, dimensions.width, dimensions.height);
+    const data3 = forceDirectedLayout(data2);
+    setGraphData(data3);
   }, [value, dimensions]);
 
   // Select nodes that are visible given the current zoom and pan state
