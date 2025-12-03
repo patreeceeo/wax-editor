@@ -14,7 +14,13 @@ export interface ObjectEntry {
  */
 export function getObjectEntries(value: any): ObjectEntry[] {
   if (isArray(value)) {
-    return value.map((value, index) => ({ key: index, value }));
+    const result = [];
+    for (let i = 0; i < value.length; i++) {
+      if (i in value) {
+        result.push({ key: i, value: value[i] });
+      }
+    }
+    return result;
   }
   if (isObjectOrArray(value)) {
     return Object.entries(value).map(([key, value]) => ({ key, value }));
@@ -61,7 +67,6 @@ export interface GraphNode {
   value: any;
   x: number;
   y: number;
-  level: number; // Hierarchical level for layout
 }
 export interface GraphEdge {
   id: string;
@@ -74,10 +79,6 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
-// Cache for graph data transformation to avoid recomputation
-const graphDataCache = new Map<string, GraphData>();
-const graphDataWeakCache = new WeakMap<object, GraphData>();
-
 /**
  * Transform a JavaScript object into a graph structure (cached)
  */
@@ -85,32 +86,18 @@ export function objectToGraph(
   rootValue: any,
   isLeaf: (value: any) => boolean,
 ): GraphData {
-  // Check cache first - handle both primitives and objects
-  let cachedData: GraphData | undefined;
-
-  if (isObjectOrArray(rootValue)) {
-    cachedData = graphDataWeakCache.get(rootValue);
-  } else {
-    const cacheKey = `${typeof rootValue}:${rootValue}`;
-    cachedData = graphDataCache.get(cacheKey);
-  }
-
-  if (cachedData) {
-    return cachedData;
-  }
-
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const visited = new Set<string>();
-  const queue: Array<{ value: any; id: string; level: number }> = [];
+  const queue: Array<{ value: any; id: string }> = [];
 
   // Start with root object
   const rootId = getObjectId(rootValue);
-  queue.push({ value: rootValue, id: rootId, level: 0 });
+  queue.push({ value: rootValue, id: rootId });
   visited.add(rootId);
 
   while (queue.length > 0) {
-    const { value, id, level } = queue.shift()!;
+    const { value, id } = queue.shift()!;
 
     // Create node
     nodes.push({
@@ -118,7 +105,6 @@ export function objectToGraph(
       value,
       x: 0, // Will be positioned by layout algorithm
       y: 0,
-      level,
     });
 
     // If not a leaf node, enqueue its properties
@@ -142,7 +128,6 @@ export function objectToGraph(
           queue.push({
             value: propertyValue,
             id: targetId,
-            level: level + 1,
           });
         }
       }
@@ -151,74 +136,63 @@ export function objectToGraph(
 
   const graphData = { nodes, edges };
 
-  // Cache based on value type
-  if (isObjectOrArray(rootValue)) {
-    graphDataWeakCache.set(rootValue, graphData);
-  } else {
-    const cacheKey = `${typeof rootValue}:${rootValue}`;
-    graphDataCache.set(cacheKey, graphData);
-  }
-
   return graphData;
 }
 
 /**
- * Simple circular layout algorithm
+ * Assuming the first node is the root, arrange its children around it in a centered circle.
+ * For each of those children, arrange their children in a smaller circle around them, and so on.
+ *
+ * Returns the modified graph data with x,y positions for each node.
  */
 export function hierarchicalLayout(
   graphData: GraphData,
   width: number,
   height: number,
 ): GraphData {
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const nodesByLevel = new Map<number, GraphNode[]>();
+  const startNode = graphData.nodes[0];
+  startNode.x = width / 2;
+  startNode.y = height / 2;
+  layoutNode(
+    graphData.nodes[0],
+    graphData,
+    new Set<string>(),
+    300,
+    startNode.x,
+    startNode.y,
+  );
+  return graphData;
+}
 
-  // Group nodes by level
-  for (const node of graphData.nodes) {
-    if (!nodesByLevel.has(node.level)) {
-      nodesByLevel.set(node.level, []);
-    }
-    nodesByLevel.get(node.level)!.push(node);
-  }
+function layoutNode(
+  node: GraphNode,
+  graphData: GraphData,
+  visited: Set<string>,
+  radius: number,
+  centerX: number,
+  centerY: number,
+) {
+  visited.add(node.id);
+  // Find children
+  const children = graphData.edges
+    .filter((edge) => edge.source === node.id)
+    .map((edge) => graphData.nodes.find((n) => n.id === edge.target)!);
 
-  const numberOfLevels = nodesByLevel.size;
+  // Radius decreases at each level, but less so with more children
+  const newRadius = (radius * Math.log(children.length + 2)) / 2;
+  const angleFromCenter = Math.atan2(node.y - centerY, node.x - centerX);
 
-  // Position nodes
-  const positionedNodes = graphData.nodes.map((node) => {
-    // Skip nodes that already have positions (were manually moved)
-    if (node.x !== 0 || node.y !== 0) {
-      return node;
-    }
-
-    const nodesInLevel = nodesByLevel.get(node.level)!;
-    const levelIndex = nodesInLevel.indexOf(node);
-
-    if (node.level === 0) {
-      // Root node at center
-      return {
-        ...node,
-        x: centerX,
-        y: centerY,
-      };
-    }
-
-    // Simple radius calculation - 100px per level
-    const radius = node.level * 100;
-
-    // Even distribution around circle
-    const angleStep = (2 * Math.PI) / nodesInLevel.length;
-    const angle =
-      node.level * ((2 * Math.PI) / numberOfLevels) + levelIndex * angleStep;
-
-    return {
-      ...node,
-      x: centerX + radius * Math.cos(angle),
-      y: centerY + radius * Math.sin(angle),
-    };
-  });
-
-  return { ...graphData, nodes: positionedNodes };
+  children
+    .filter((child) => !visited.has(child.id))
+    .forEach((child, index) => {
+      // Arrange around the parent but oriented away from center
+      const angle =
+        angleFromCenter + (index / children.length) * Math.PI - Math.PI / 2;
+      child.x = node.x + newRadius * Math.cos(angle);
+      child.y = node.y + newRadius * Math.sin(angle);
+      // Recursively layout child's children
+      layoutNode(child, graphData, visited, newRadius, centerX, centerY);
+    });
 }
 
 /**
