@@ -4,7 +4,6 @@ import { CompiledProcedure } from "./compiled_procedure";
 import { Compiler } from "./compiler";
 import {
   literal,
-  pop,
   setVariable,
   setVariableToLiteral,
   getVariable,
