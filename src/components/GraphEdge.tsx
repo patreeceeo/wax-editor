@@ -1,6 +1,4 @@
 import React from "react";
-import { WaxClass } from "../wax_classes";
-import { getObjectId } from "../utils";
 import {
   calculateEdgeTextAngle,
   getLineRectangleIntersection,
@@ -9,6 +7,7 @@ import {
   type GraphNode,
 } from "../graph_utils";
 import { TextRect } from "./TextRect";
+import { getNodeText } from "./GraphNode";
 
 /**
  * Memoized individual graph edge component
@@ -29,11 +28,7 @@ export const GraphEdgeComponent = React.memo(
     if (!sourceNode || !targetNode) return null;
 
     // Calculate target node dimensions
-    const waxClass = WaxClass.forJsObject(targetNode.value);
-    const targetText = WaxClass.isValueClass(waxClass)
-      ? waxClass.stringify(targetNode.value)
-      : `${waxClass.displayName} #${getObjectId(targetNode.value)}`;
-
+    const targetText = getNodeText(targetNode);
     const targetDimensions = getTextDimensions(targetText, 12);
 
     // Calculate where the line should intersect with target node rectangle

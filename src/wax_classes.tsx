@@ -82,7 +82,7 @@ export class WaxClass<T> {
   displayColor = "var(--color-blue-600)";
 
   stringify(value: T): string {
-    return String(value);
+    return `${this.displayName}#${getObjectId(value)}`;
   }
 
   renderReact(value: any) {
@@ -139,7 +139,7 @@ export const objectClass = new (class extends WaxClass<Record<string, any>> {
   displayName = "Object";
   displayColor = "var(--color-blue-600)";
   stringify(value: Record<string, any>) {
-    return JSON.stringify(value);
+    return `Object #${getObjectId(value)}`;
   }
 })();
 
@@ -147,7 +147,13 @@ export const arrayClass = new (class extends WaxClass<any[]> {
   displayName = "Array";
   displayColor = "var(--color-teal-600)";
   stringify(value: any[]) {
-    return JSON.stringify(value);
+    const items = value.map((subValue) => {
+      const waxClass = WaxClass.forJsObject(subValue);
+      return WaxClass.isValueClass(waxClass)
+        ? waxClass.stringify(subValue)
+        : `_`;
+    });
+    return `[${items.join(", ")}]`;
   }
   renderReact(value: any[]): JSX.Element {
     const className = `inline-flex font-bold whitespace-pre`;

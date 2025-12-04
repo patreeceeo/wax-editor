@@ -16,8 +16,9 @@ export function getObjectEntries(value: any): ObjectEntry[] {
   if (isArray(value)) {
     const result = [];
     for (let i = 0; i < value.length; i++) {
-      if (i in value) {
-        result.push({ key: i, value: value[i] });
+      const element = value[i];
+      if (i in value && isObjectOrArray(element)) {
+        result.push({ key: i, value: element });
       }
     }
     return result;
