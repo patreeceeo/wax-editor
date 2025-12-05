@@ -75,6 +75,9 @@ class Ok<T> extends Result<T, any> {
     super();
     this.value = value;
   }
+  toString() {
+    return `Ok(${this.value})`;
+  }
   isOk(): this is Ok<T> {
     return true;
   }
