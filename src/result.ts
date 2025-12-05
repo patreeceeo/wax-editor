@@ -67,6 +67,22 @@ export abstract class Result<T, E> {
     ok: (value: T) => R;
     fail: (error: E) => R;
   }): R;
+
+  /**
+   * Given a type guard function for type T, narrows the Result to Ok<T> if the guard passes.
+   * If the Result is a Fail, it remains Fail<E>.
+   *
+   * @param typeGuard - A type guard function that checks if a value is of type U
+   * @returns Result<U, E> - Ok<U> if the original Result was Ok<T> and the guard passed, otherwise Fail<E>
+   *
+   * @example
+   * ```typescript
+   * const result: Result<number | string, string> = getResult();
+   * const numberResult = result.guard((value): value is number => typeof value === "number"); // Result<number, string>
+   */
+  abstract guardType<U extends T>(
+    typeGuard: (value: T) => value is U,
+  ): Result<U, E>;
 }
 
 class Ok<T> extends Result<T, any> {
@@ -93,6 +109,13 @@ class Ok<T> extends Result<T, any> {
   match<R>(handlers: { ok: (value: T) => R; fail: (error: any) => R }): R {
     return handlers.ok(this.value);
   }
+  guardType<U extends T>(typeGuard: (value: T) => value is U): Result<U, any> {
+    if (typeGuard(this.value)) {
+      return new Ok<U>(this.value);
+    } else {
+      return new Fail<any>(`Value ${this.value} did not pass type guard.`);
+    }
+  }
 }
 
 class Fail<E> extends Result<any, E> {
@@ -118,6 +141,9 @@ class Fail<E> extends Result<any, E> {
   }
   match<R>(handlers: { ok: (value: any) => R; fail: (error: E) => R }): R {
     return handlers.fail(this.error);
+  }
+  guardType<U>(_: (value: any) => value is U): Result<U, E> {
+    return new Fail<E>(this.error);
   }
 }
 
