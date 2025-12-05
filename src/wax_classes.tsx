@@ -2,6 +2,7 @@ import type { JSX } from "react/jsx-runtime";
 import { CompiledProcedure } from "./compiled_procedure";
 import { invariant } from "./error";
 import { getObjectId } from "./utils";
+import { okIfDefined, Result } from "./result";
 
 interface WaxClassInit {
   methods?: { [key: string]: CompiledProcedure };
@@ -69,8 +70,11 @@ export class WaxClass<T> {
     this._methods = methods;
   }
 
-  lookupMethod(name: string): CompiledProcedure | undefined {
-    return this._methods[name];
+  lookupMethod(name: string): Result<CompiledProcedure, string> {
+    return okIfDefined(
+      this._methods[name],
+      `Method '${name}' not found on ${this.displayName}.`,
+    );
   }
 
   defineMethod(name: string, procedure: CompiledProcedure) {

@@ -64,16 +64,8 @@ export class Machine extends PersistentObject {
     args: CompiledInstructionArg[],
   ) {
     const receiverClass = WaxClass.forJsObject(receiver);
-    invariant(
-      receiverClass !== undefined,
-      `Receiver of message '${methodSelector}' does not have a WaxClass.`,
-    );
-    const method = receiverClass.lookupMethod(methodSelector);
-    invariant(
-      method !== undefined,
-      `Method '${methodSelector}' not found on receiver's class.`,
-    );
-    this.invokeProcedure(method, [...args, receiver], methodSelector);
+    const result = receiverClass.lookupMethod(methodSelector);
+    this.invokeProcedure(result.unwrap(), [...args, receiver], methodSelector);
   }
 
   invokeProcedure(
