@@ -47,6 +47,18 @@ export abstract class Result<T, E> {
   abstract unwrapErr(): E;
 
   /**
+   * Returns the success value if the result is Ok, otherwise returns the provided default value.
+   * This is a convenient way to provide a fallback value in case of failure.
+   * @param defaultValue - The value to return if the result is Fail
+   * @returns The success value of type T or the default value
+   * @example
+   * ```typescript
+   * const value = result.orElse(0); // If result is Fail, value will be 0
+   * ```
+   */
+  abstract orElse(defaultValue: T): T;
+
+  /**
    * Pattern matches on the result and applies the appropriate handler.
    * This is the preferred way to handle both success and failure cases.
    *
@@ -106,6 +118,9 @@ class Ok<T> extends Result<T, any> {
   unwrapErr(): any {
     raise("Tried to unwrapErr an Ok result.");
   }
+  orElse(_: T): T {
+    return this.value;
+  }
   match<R>(handlers: { ok: (value: T) => R; fail: (error: any) => R }): R {
     return handlers.ok(this.value);
   }
@@ -139,6 +154,9 @@ class Fail<E> extends Result<any, E> {
   unwrapErr(): E {
     return this.error;
   }
+  orElse(defaultValue: any): any {
+    return defaultValue;
+  }
   match<R>(handlers: { ok: (value: any) => R; fail: (error: E) => R }): R {
     return handlers.fail(this.error);
   }
@@ -170,6 +188,26 @@ export function ok<T, E>(t: T) {
 }
 
 /**
+ * Creates a Result based on a boolean condition.
+ * If the condition is true, returns an Ok result with the provided success value.
+ * If the condition is false, returns a Fail result with the provided error value.
+ * This is useful for validating conditions and returning appropriate results.
+ * @template T - The type of the success value
+ * @template E - The type of the error value
+ * @param condition - The boolean condition to evaluate
+ * @param t - The success value to use if the condition is true
+ * @param e - The error value to use if the condition is false
+ * @returns Result<T, E> - Ok with t if condition is true, Fail with e if false
+ */
+export function okIf<T, E>(condition: boolean, t: T, e: E): Result<T, E> {
+  if (condition) {
+    return ok<T, E>(t);
+  } else {
+    return fail<T, E>(e);
+  }
+}
+
+/**
  * Creates a Result based on whether the provided value is defined.
  *
  * This is useful for handling potentially undefined values in a type-safe way,
@@ -189,11 +227,7 @@ export function ok<T, E>(t: T) {
  * ```
  */
 export function okIfDefined<T, E>(t: T | undefined, err: E): Result<T, E> {
-  if (t !== undefined) {
-    return ok<T, E>(t);
-  } else {
-    return fail<T, E>(err);
-  }
+  return okIf<T, E>(t !== undefined, t as T, err);
 }
 
 /**

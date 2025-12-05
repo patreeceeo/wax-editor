@@ -128,17 +128,17 @@ describe("Machine Critical Bug Prevention", () => {
       // Set variable in main context
       machine.applyInstruction(machine.getInstruction()!); // literal "main_var"
       const mainCtx = machine.currentProcedureContext()!;
-      mainCtx.set("test_var", mainCtx.pop());
+      mainCtx.set("test_var", mainCtx.pop().unwrap());
 
       // Invoke nested and set different variable
       machine.invokeProcedure(nested, []);
       machine.applyInstruction(machine.getInstruction()!); // literal "nested_var"
       const nestedCtx = machine.currentProcedureContext()!;
-      nestedCtx.set("test_var", nestedCtx.pop());
+      nestedCtx.set("test_var", nestedCtx.pop().unwrap());
 
       // Variables should be different
-      expect(mainCtx.get("test_var")).toBe("main_var");
-      expect(nestedCtx.get("test_var")).toBe("nested_var");
+      expect(mainCtx.get("test_var").unwrap()).toBe("main_var");
+      expect(nestedCtx.get("test_var").unwrap()).toBe("nested_var");
     });
   });
 
@@ -233,8 +233,8 @@ describe("Machine Critical Bug Prevention", () => {
       const mainCtx = machine.currentProcedureContext()!;
 
       // Main should have return values on its stack
-      expect(mainCtx.pop()).toBe("result2");
-      expect(mainCtx.pop()).toBe("result1");
+      expect(mainCtx.pop().unwrap()).toBe("result2");
+      expect(mainCtx.pop().unwrap()).toBe("result1");
       expect(mainCtx.stackSize).toBe(0); // Stack should be empty after consuming returns
     });
   });
@@ -281,7 +281,7 @@ describe("Machine Critical Bug Prevention", () => {
       const unwindOrder: number[] = [];
       while (machine.canReturnFromProcedure()) {
         const ctx = machine.currentProcedureContext()!;
-        unwindOrder.push(ctx.pop() as number);
+        unwindOrder.push(ctx.pop().unwrap() as number);
         machine.returnFromProcedure();
       }
 
