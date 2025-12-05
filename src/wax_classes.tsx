@@ -95,6 +95,9 @@ export class WaxClass<T> {
   }
 }
 
+/**
+ * TODO avoid billion-dollar mistakes https://en.wikipedia.org/wiki/Null_pointer#History
+ */
 export const nilClass = new (class extends WaxClass<undefined> {
   displayName = "Nil";
   displayColor = "var(--color-pink-600)";
