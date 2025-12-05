@@ -1,4 +1,4 @@
-import { target } from "structurajs";
+import * as Structura from "structurajs";
 import type {
   CompiledInstructionArg,
   CompiledProcedure,
@@ -8,9 +8,10 @@ import type { Machine } from "./machine";
 import type { Variable } from "./variable";
 
 interface ProcedureContextInit {
+  id: number;
   machine: Machine;
   procedure: CompiledProcedure;
-  parentContext?: ProcedureContext;
+  parentId: number;
   methodSelector?: string;
 }
 
@@ -21,35 +22,34 @@ export class ProcedureContext {
   private _returnValues: CompiledInstructionArg[] = [];
 
   private _procedure: CompiledProcedure;
+
   /**
-   * Using an index works, but a direct reference was correlated with a bug:
-   * When a procedure would try to update a variable in a parent context, it
-   * would find the variable and update it correctly, but then then the
-   * machine would somehow have a copy of the parent context that did not
-   * reflect the updated variable value. Hypothesis: The copy-on-write
-   * logic was making copies of the contexts and referencing the new ones
-   * from the machine's stack, but those contexts themselves still had parent
-   * context references to the old contexts. Using an index forces the lookup
-   * to always go through the machine, which ensures the most up-to-date
-   * context is used.
+   * The ID of the parent ProcedureContext.
+   * Use ID instead of direct reference because the Machine also references ProcedureContexts via its stack, and Structura will silently create duplicate ProcedureContexts if they directly reference each other.
    */
-  private _parentContextIndex: number = -1;
+  private _parentId: number;
 
   //@ts-expect-error
   private _methodSelector?: string;
 
+  private _id: number;
+
   constructor({
+    id,
     machine,
     procedure,
-    parentContext,
+    parentId,
     methodSelector,
   }: ProcedureContextInit) {
+    this._id = id;
     this._machine = machine;
     this._procedure = procedure;
     this._methodSelector = methodSelector;
-    if (parentContext !== undefined) {
-      this._parentContextIndex = machine.indexOfProcedureContext(parentContext);
-    }
+    this._parentId = parentId;
+  }
+
+  get id() {
+    return this._id;
   }
 
   get machine() {
@@ -60,8 +60,8 @@ export class ProcedureContext {
     return this._procedure;
   }
 
-  get parentContext() {
-    return this._machine.getProcedureContextAtIndex(this._parentContextIndex);
+  getParentContext(): ProcedureContext | undefined {
+    return this._machine.getProcedureContextById(this._parentId);
   }
 
   _setMachine(machine: Machine) {
@@ -94,7 +94,7 @@ export class ProcedureContext {
       if (variableName in ctx._variables) {
         return ctx;
       }
-      ctx = ctx._machine.getProcedureContextAtIndex(ctx._parentContextIndex);
+      ctx = ctx.getParentContext();
     }
     return this;
   }
@@ -163,6 +163,6 @@ export class ProcedureContext {
      * may have been created during a `produce` call on the machine.
      * See https://giusepperaso.github.io/structura.js/gotchas.html#potential-dangling-proxy-references-if-you-assign-unproxied-objects-into-the-draft
      */
-    this._stack = this._stack.map((item) => target(item));
+    this._stack = this._stack.map((item) => Structura.target(item));
   }
 }

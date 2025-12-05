@@ -14,6 +14,7 @@ export class Machine extends PersistentObject {
   private _stack: ProcedureContext[] = [];
   private _memory = new Memory<CompiledInstructionArg>();
   private _running = false;
+  private _nextProcedureContextId = 0;
 
   start() {
     this._stack = [];
@@ -81,9 +82,10 @@ export class Machine extends PersistentObject {
     methodSelector?: string,
   ) {
     const newCtx = new ProcedureContext({
+      id: this._nextProcedureContextId++,
       machine: this,
       procedure,
-      parentContext: this._getParentContextForProcedure(procedure),
+      parentId: this._getParentContextForProcedure(procedure)?.id ?? -1,
       methodSelector,
     });
     this._stack.unshift(newCtx);
@@ -163,16 +165,8 @@ export class Machine extends PersistentObject {
     return variable;
   }
 
-  indexOfProcedureContext(context: ProcedureContext): number {
-    return this._stack.indexOf(context);
-  }
-
-  getProcedureContextAtIndex(index: number): ProcedureContext | undefined {
-    invariant(
-      index < this._stack.length,
-      `No procedure context at index ${index}.`,
-    );
-    return index >= 0 ? this._stack.at(-index) : undefined;
+  getProcedureContextById(id: number): ProcedureContext | undefined {
+    return this._stack.find((ctx) => ctx.id === id);
   }
 
   getCallStack(): (string | number)[] {
