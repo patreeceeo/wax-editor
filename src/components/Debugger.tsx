@@ -1,7 +1,6 @@
 import { useCallback, useReducer } from "react";
 import { Machine } from "../machine";
 import { MachineProvider } from "./MachineContext";
-import JsonDiff from "./JsonDiff";
 import { BackIcon, FastForwardIcon, PlayIcon, RewindIcon } from "./Icons";
 import Button from "./Button";
 import ProgramViewer from "./ProgramViewer";
@@ -129,11 +128,6 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
 
   const [state, dispatch] = useReducer(_reducer, initialState);
   const { machines, isMore, machineIndex, stepCount } = state;
-  const ctx = machines[machineIndex].currentProcedureContext()!.toJSON();
-  const previousCtx =
-    machineIndex < machines.length - 1
-      ? machines[machineIndex + 1].currentProcedureContext()!.toJSON()
-      : undefined;
 
   const program = machines[machineIndex].currentProcedure()!;
 
@@ -180,32 +174,13 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
         </Button>
       </div>
       <h3>Step Count: {stepCount}</h3>
-      <GraphView value={machines[machineIndex]} />
       <div className="flex space-x-4">
         <div>
           <h2>Instructions</h2>
           <ProgramViewer value={program} />
         </div>
         <div className="flex-1 space-y-4">
-          <h2>State</h2>
-          <div className="flex space-x-4">
-            <div>
-              <h3 className="mt-0">Variables</h3>
-              <JsonDiff
-                currentContext={ctx.variables}
-                previousContext={
-                  previousCtx ? previousCtx["variables"] : undefined
-                }
-              />
-            </div>
-            <div>
-              <h3 className="mt-0">Stack</h3>
-              <JsonDiff
-                currentContext={ctx.stack}
-                previousContext={previousCtx ? previousCtx["stack"] : undefined}
-              />
-            </div>
-          </div>
+          <GraphView value={machines[machineIndex]} />
         </div>
       </div>
     </MachineProvider>

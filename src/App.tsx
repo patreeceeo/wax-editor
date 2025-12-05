@@ -111,7 +111,7 @@ function App() {
   const machine = useMemo(() => createInitialMachine(), []);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4" style={{ width: "100vw" }}>
       <h1>My lil' Virtual Machine</h1>
       <Debugger machine={machine} />
     </div>
