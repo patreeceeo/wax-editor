@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "tscwatch": "tsc --noEmit --watch --project tsconfig.app.json"
   },
   "dependencies": {
     "@types/diff": "^7.0.2",
