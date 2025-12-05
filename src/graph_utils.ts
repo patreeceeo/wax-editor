@@ -9,6 +9,10 @@ export interface ObjectEntry {
   value: any;
 }
 
+/** Crude method of simplifying the graph by excluding certain object keys by name */
+const excludeKeys = new Set<string>([]);
+// const excludeKeys = new Set<string>(["_methodSelector", "refCount", "_returnValues", "pc", "_machine", "_memory", "_running", "_nextVariableId", "id"]);
+
 /**
  * Extract entries from objects and arrays in a consistent format
  */
@@ -24,7 +28,9 @@ export function getObjectEntries(value: any): ObjectEntry[] {
     return result;
   }
   if (isObjectOrArray(value)) {
-    return Object.entries(value).map(([key, value]) => ({ key, value }));
+    return Object.entries(value)
+      .filter(([key]) => !excludeKeys.has(key))
+      .map(([key, value]) => ({ key, value }));
   }
   return [];
 }
