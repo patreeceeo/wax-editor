@@ -49,7 +49,14 @@ export class CompiledProcedure {
   }
 }
 
-export type CompiledInstructionArg = any;
+export type CompiledInstructionArg =
+  | undefined
+  | number
+  | string
+  | boolean
+  | Array<CompiledInstructionArg>
+  | { [key: string]: CompiledInstructionArg }
+  | CompiledProcedure;
 
 export interface InstructionFn<Args extends any[] = any[]> {
   (ctx: ProcedureContext, ...args: Args): true | void;

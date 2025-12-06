@@ -3,9 +3,9 @@ import type {
   CompiledInstructionArg,
   CompiledProcedure,
 } from "./compiled_procedure";
-import { invariant } from "./error";
 import type { Machine } from "./machine";
 import type { Variable } from "./variable";
+import { okIf, okIfDefined, type Result } from "./result";
 
 interface ProcedureContextInit {
   id: number;
@@ -74,8 +74,11 @@ export class ProcedureContext {
     this._stack.push(value);
   }
   pop() {
-    const popped = this._stack.pop();
-    return popped;
+    return okIf(
+      this._stack.length > 0,
+      this._stack.pop(),
+      "Stack underflow: no items to pop.",
+    );
   }
   peek() {
     return this._stack[this._stack.length - 1];
@@ -111,14 +114,13 @@ export class ProcedureContext {
     variableContext._variables[name].value = value;
   }
 
-  get(name: string): CompiledInstructionArg {
+  get(name: string): Result<CompiledInstructionArg, string> {
     const variableContext = this._getVariableContext(name);
     const variable = variableContext._variables[name];
-    invariant(
-      variable !== undefined,
+    return okIfDefined(
+      variable?.value,
       `Variable "${name}" not found in this context or any parent context.`,
     );
-    return variable.value;
   }
 
   pushReturnValue(value: CompiledInstructionArg) {

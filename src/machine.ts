@@ -1,14 +1,15 @@
 import { Memory } from "./memory";
 import {
+  CompiledProcedure,
   type CompiledInstruction,
   type CompiledInstructionArg,
-  type CompiledProcedure,
 } from "./compiled_procedure";
 import { PersistentObject } from "./persistent_object";
 import { invariant } from "./error";
 import { WaxClass } from "./wax_classes";
 import { Variable } from "./variable";
 import { ProcedureContext } from "./procedure_context";
+import { type Result } from "./result";
 
 export class Machine extends PersistentObject {
   private _stack: ProcedureContext[] = [];
@@ -18,12 +19,10 @@ export class Machine extends PersistentObject {
 
   start() {
     this._stack = [];
-    const main = this._memory.get("main");
-    invariant(
-      main !== undefined,
-      "No 'main' procedure loaded in machine memory.",
-    );
-    this.invokeProcedure(main, []);
+    const result = this._memory
+      .get("main")
+      .guardType(CompiledProcedure.isInstance);
+    this.invokeProcedure(result.unwrap(), []);
     this._running = true;
   }
 
@@ -39,7 +38,7 @@ export class Machine extends PersistentObject {
     this._memory.set(key, proc);
   }
 
-  readMemory(key: string): CompiledInstructionArg | undefined {
+  readMemory(key: string): Result<CompiledInstructionArg, string> {
     return this._memory.get(key);
   }
 
@@ -64,16 +63,8 @@ export class Machine extends PersistentObject {
     args: CompiledInstructionArg[],
   ) {
     const receiverClass = WaxClass.forJsObject(receiver);
-    invariant(
-      receiverClass !== undefined,
-      `Receiver of message '${methodSelector}' does not have a WaxClass.`,
-    );
-    const method = receiverClass.lookupMethod(methodSelector);
-    invariant(
-      method !== undefined,
-      `Method '${methodSelector}' not found on receiver's class.`,
-    );
-    this.invokeProcedure(method, [...args, receiver], methodSelector);
+    const result = receiverClass.lookupMethod(methodSelector);
+    this.invokeProcedure(result.unwrap(), [...args, receiver], methodSelector);
   }
 
   invokeProcedure(

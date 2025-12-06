@@ -1,4 +1,7 @@
 // TODO use WeakMap with memoized key objects
+
+import { okIfDefined, Result } from "./result";
+
 /** * A simple in-memory key-value store with reference counting. */
 export class Memory<T> {
   private _store: {
@@ -13,8 +16,11 @@ export class Memory<T> {
   set(key: string, value: T): void {
     this._store[key] = { value, refCount: 0 };
   }
-  get(key: string): T | undefined {
-    return this._store[key].value;
+  get(key: string): Result<T, string> {
+    return okIfDefined(
+      this._store[key].value,
+      `Key "${key}" not found in memory.`,
+    );
   }
   retain(key: string): void {
     if (this.has(key)) {

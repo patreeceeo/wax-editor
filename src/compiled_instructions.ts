@@ -22,12 +22,12 @@ export const literal: InstructionFn<[CompiledInstructionArg]> = (ctx, obj) => {
 literal.displayName = "literal";
 
 export const pop: InstructionFn<[]> = (ctx) => {
-  ctx.pop();
+  ctx.pop().unwrap();
 };
 pop.displayName = "pop";
 
 export const setVariable: InstructionFn<[string]> = (ctx, name) => {
-  ctx.set(name, ctx.pop());
+  ctx.set(name, ctx.pop().unwrap());
 };
 setVariable.displayName = "setVariable";
 
@@ -39,12 +39,12 @@ export const setVariableToLiteral: InstructionFn<
 setVariableToLiteral.displayName = "setVariableToLiteral";
 
 export const getVariable: InstructionFn<[string]> = (ctx, name) => {
-  ctx.push(ctx.get(name));
+  ctx.push(ctx.get(name).unwrap());
 };
 getVariable.displayName = "getVariable";
 
 export const pushReturnValue: InstructionFn<[]> = (ctx) => {
-  ctx.pushReturnValue(ctx.pop());
+  ctx.pushReturnValue(ctx.pop().orElse(undefined));
 };
 pushReturnValue.displayName = "pushReturnValue";
 
@@ -66,7 +66,7 @@ export const jump: InstructionFn<[number]> = (ctx, deltaPc) => {
 jump.displayName = "jump";
 
 export const jumpIfTrue: InstructionFn<[number]> = (ctx, deltaPc) => {
-  const value = ctx.pop();
+  const value = ctx.pop().unwrap();
   invariant(
     isBoolean(value),
     `jumpIfTrue expects boolean value, got ${typeof value}`,
@@ -84,7 +84,7 @@ export const jumpIfTrue: InstructionFn<[number]> = (ctx, deltaPc) => {
 jumpIfTrue.displayName = "jumpIfTrue";
 
 export const jumpIfFalse: InstructionFn<[number]> = (ctx, deltaPc) => {
-  const value = ctx.pop();
+  const value = ctx.pop().unwrap();
   invariant(
     isBoolean(value),
     `jumpIfFalse expects boolean value, got ${typeof value}`,
@@ -112,15 +112,15 @@ export const sendMessage: InstructionFn<[string, number]> = (
   );
   const args: CompiledInstructionArg[] = [];
   for (let i = 0; i < argCount; i++) {
-    args.unshift(ctx.pop()!);
+    args.unshift(ctx.pop().unwrap());
   }
-  const receiver = ctx.pop();
+  const receiver = ctx.pop().unwrap();
   ctx.machine.invokeMethod(receiver, message, args);
 };
 sendMessage.displayName = "sendMessage";
 
 export const invokeProcedure: InstructionFn<[]> = (ctx) => {
-  const procedure = ctx.pop();
+  const procedure = ctx.pop().unwrap();
   invariant(
     CompiledProcedure.isInstance(procedure),
     `invokeProcedure expects a CompiledProcedure, got ${typeof procedure}`,
@@ -136,8 +136,8 @@ halt.displayName = "halt";
 
 /** Number instructions **/
 export const greaterThan: InstructionFn<[]> = (ctx) => {
-  const a = ctx.pop();
-  const b = ctx.pop();
+  const a = ctx.pop().unwrap();
+  const b = ctx.pop().unwrap();
   invariant(
     isNumber(a) && isNumber(b),
     `greaterThan expects numeric operands, got ${typeof a} and ${typeof b}`,
@@ -147,8 +147,8 @@ export const greaterThan: InstructionFn<[]> = (ctx) => {
 greaterThan.displayName = "greaterThan";
 
 export const lessThan: InstructionFn<[]> = (ctx) => {
-  const a = ctx.pop();
-  const b = ctx.pop();
+  const a = ctx.pop().unwrap();
+  const b = ctx.pop().unwrap();
   invariant(
     isNumber(a) && isNumber(b),
     `lessThan expects numeric operands, got ${typeof a} and ${typeof b}`,
@@ -158,8 +158,8 @@ export const lessThan: InstructionFn<[]> = (ctx) => {
 lessThan.displayName = "lessThan";
 
 export const add: InstructionFn<[]> = (ctx) => {
-  const a = ctx.pop();
-  const b = ctx.pop();
+  const a = ctx.pop().unwrap();
+  const b = ctx.pop().unwrap();
   invariant(
     isNumber(a) && isNumber(b),
     `add expects numeric operands, got ${typeof a} and ${typeof b}`,
@@ -170,8 +170,8 @@ add.displayName = "add";
 
 /** Boolean instructions **/
 export const and: InstructionFn<[]> = (ctx) => {
-  const a = ctx.pop();
-  const b = ctx.pop();
+  const a = ctx.pop().unwrap();
+  const b = ctx.pop().unwrap();
   invariant(
     isBoolean(a) && isBoolean(b),
     `and expects boolean operands, got ${typeof a} and ${typeof b}`,
@@ -185,7 +185,7 @@ export const getJsObjectPropertyForLiteral: InstructionFn<[string | number]> = (
   ctx,
   key,
 ) => {
-  const obj = ctx.pop();
+  const obj = ctx.pop().unwrap();
   invariant(
     isObjectOrArray(obj),
     `getJsObjectPropertyForLiteral called on non-object/array: ${getTypeName(obj)}`,
@@ -195,8 +195,8 @@ export const getJsObjectPropertyForLiteral: InstructionFn<[string | number]> = (
 getJsObjectPropertyForLiteral.displayName = "getJsObjectPropertyForLiteral";
 
 export const getJsObjectProperty: InstructionFn<[]> = (ctx) => {
-  const obj = ctx.pop();
-  const key = ctx.pop();
+  const obj = ctx.pop().unwrap();
+  const key = ctx.pop().unwrap();
   invariant(
     isObjectOrArray(obj),
     `getProperty called on non-object/array: ${getTypeName(obj)}`,

@@ -15,6 +15,7 @@ import {
 } from "./compiled_procedure";
 import { invariant } from "./error";
 import type { Machine } from "./machine";
+import { okIf, type Result } from "./result";
 
 interface CompilerInit {
   machine: Machine;
@@ -55,14 +56,15 @@ export class Compiler {
     this._topProcedure = child;
   }
 
-  popProcedure(): CompiledProcedure {
+  popProcedure(): Result<CompiledProcedure, string> {
+    const length = this._procedureStack.length;
     const popped = this._procedureStack.pop();
     this._topProcedure = this._procedureStack[this._procedureStack.length - 1];
-    invariant(
-      popped !== undefined,
+    return okIf(
+      length > 0,
+      popped!,
       "Procedure stack underflow: no procedure to pop.",
     );
-    return popped;
   }
 
   get currentProcedure(): CompiledProcedure | undefined {
@@ -83,8 +85,8 @@ export class Compiler {
     for (const step of steps) {
       step.fn(this, ...step.args);
     }
-    const procedure = this.popProcedure();
-    this._machine.loadMemory("main", procedure!);
+    const procedure = this.popProcedure().unwrap();
+    this._machine.loadMemory("main", procedure);
   }
 }
 
@@ -121,7 +123,7 @@ export const exitProcedure: CompilerStepFn = (compiler: Compiler) => {
   if (compiler.currentProcedure!.at(-1)?.fn !== returnFromProcedure) {
     compiler.append(Compiler.emit(returnFromProcedure));
   }
-  const procedure = compiler.popProcedure();
+  const procedure = compiler.popProcedure().unwrap();
   compiler.append(Compiler.emit(literalInstruction, procedure));
 };
 export const sendMessage: CompilerStepFn<[string, number]> = (
