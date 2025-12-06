@@ -59,7 +59,7 @@ export class Compiler {
   popProcedure(): Result<CompiledProcedure, string> {
     const length = this._procedureStack.length;
     const popped = this._procedureStack.pop();
-    this._topProcedure = this._procedureStack[this._procedureStack.length - 1];
+    this._topProcedure = this._procedureStack.at(-1);
     return okIf(
       length > 0,
       popped!,

@@ -81,7 +81,7 @@ export class ProcedureContext {
     );
   }
   peek() {
-    return this._stack[this._stack.length - 1];
+    return this._stack.at(-1);
   }
   get stackSize() {
     return this._stack.length;
@@ -145,7 +145,7 @@ export class ProcedureContext {
 
   // Semantic test helpers
   getStackTop(): CompiledInstructionArg | undefined {
-    return this._stack[this._stack.length - 1];
+    return this._stack.at(-1);
   }
 
   hasVariable(name: string): boolean {
