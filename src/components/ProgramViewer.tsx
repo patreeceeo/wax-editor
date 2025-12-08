@@ -34,9 +34,7 @@ export function ProcedureViewer({ value }: { value: CompiledProcedure }) {
 
   return (
     <>
-      <b style={{ color: waxClass.displayColor }}>
-        {waxClass.stringify(value)}
-      </b>
+      {waxClass.renderReact(value)}
       {value.map((instruction, index) => (
         <Instruction
           key={index}
