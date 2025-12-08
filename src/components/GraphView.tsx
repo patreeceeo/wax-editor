@@ -8,7 +8,7 @@ import {
   trueClass,
   WaxClass,
 } from "../wax_classes";
-import classNames from "classnames";
+import classNames from "clsx";
 import {
   useElementSize,
   useEventListener,

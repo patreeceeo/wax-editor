@@ -4,7 +4,7 @@ import {
 } from "../compiled_procedure";
 import { WaxClass } from "../wax_classes";
 import { useMachine } from "./MachineContext";
-import cx from "classnames";
+import classNames from "clsx";
 
 interface ProgramViewerProps {
   value: CompiledProcedure;
@@ -67,7 +67,7 @@ function Instruction({
   return (
     <div
       key={lineNumber}
-      className={cx(`flex px-3`, {
+      className={classNames(`flex px-3`, {
         "bg-gray-600": isCurrent,
         "bg-gray-700": isPrevious,
       })}
