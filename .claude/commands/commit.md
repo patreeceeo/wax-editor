@@ -1,0 +1,33 @@
+---
+description: Create a git commit following project standards
+argument-hint: [optional-commit-description]
+---
+
+## General Guidelines
+
+### Output Style
+
+- **Never explicitly mention TDD** in code, comments, commits, PRs, or issues
+- Write natural, descriptive code without meta-commentary about the development process
+- The code should speak for itself - TDD is the process, not the product
+
+Beads is available for task tracking. Use `mcp__beads__*` tools to manage issues (the user interacts via `bd` commands).
+
+Create a git commit following project standards
+
+Include any of the following info if specified: $ARGUMENTS
+
+## Process
+
+1. Run `git status` and `git diff` to review changes
+2. Run `git log --oneline -5` to see recent commit style
+3. Stage relevant files with `git add`
+4. Create commit with descriptive message
+5. Verify with `git status`
+
+## Example
+
+```bash
+git add <files>
+git commit -m "feat(#123): add validation to user input form"
+```
