@@ -9,6 +9,9 @@ See first section of README.md
 ## Development Commands
 
 ```bash
+# Issue tracking
+Whenever starting on a new request, create an issue for it in `bd` and add any dependencies, if any. Run `bd quickstart` for an overview of how to use the `bd` command, or `bd --list` for a list of all available commands. Run `bd <command> --help` for info about a specific command.
+
 # Development
 npm run dev          # Start Vite development server with hot reload
 npm run build        # TypeScript compilation + Vite production build
