@@ -138,7 +138,7 @@ export const procedureClass = new (class extends WaxClass<CompiledProcedure> {
   displayName = "Procedure";
   displayColor = "var(--color-purple-600)";
   stringify(value: CompiledProcedure) {
-    return `⁋ ${value.id.toString()}`;
+    return `Procedure ${value.id.toString()}`;
   }
 })();
 

@@ -30,10 +30,13 @@ export function ProcedureViewer({ value }: { value: CompiledProcedure }) {
   const pc = machine.currentProcedureContext()?.pc ?? 0;
   const lastPc = previousMachine?.currentProcedureContext()?.pc ?? -1;
   const inCurrentProcedure = machine.currentProcedure() === value;
+  const waxClass = WaxClass.forJsObject(value);
 
   return (
     <>
-      <b>id: {value.id}</b>
+      <b style={{ color: waxClass.displayColor }}>
+        {waxClass.stringify(value)}
+      </b>
       {value.map((instruction, index) => (
         <Instruction
           key={index}
