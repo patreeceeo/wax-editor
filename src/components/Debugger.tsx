@@ -176,7 +176,6 @@ export default function Debugger({ machine: initialMachine }: DebuggerProps) {
       <h3>Step Count: {stepCount}</h3>
       <div className="flex space-x-4">
         <div>
-          <h2>Instructions</h2>
           <ProgramViewer value={program} />
         </div>
         <div className="flex-1 space-y-4">
