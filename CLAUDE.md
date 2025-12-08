@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-See first section of README.md
+See first section of README.md to understand the project itself, and `pull_request_template.md` to understand how to contribute.
 
 ## Development Commands
 

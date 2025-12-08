@@ -2,9 +2,6 @@
 
 Please evaluate the proposed changes using the following rubric.
 
-**Project Stack:** TypeScript · React · Vite · Vitest · TailwindCSS · ESLint
-**Purpose:** Assess the technical, architectural, and intellectual rigor of a pull request.
-
 Replace `[ ]` with `[x]` for completed tasks.
 
 ---
@@ -18,7 +15,7 @@ Replace `[ ]` with `[x]` for completed tasks.
 
 ## 2. Code Quality & Architecture (25%)
 
-- [ ] **Readability & Self-Documentation:** Code explains itself via naming, structure, and typing. Comments explain _why_, not _what_.
+- [ ] **Readability & Self-Documentation:** Code explains itself via naming, structure, and typing. Comments explain _why_, not _what_. Each class or function has a helpful JSDoc comment.
 - [ ] **Modularity & DRYness:** Code is lean, cohesive, reusable, and free of unnecessary duplication.
 - [ ] **TypeScript Rigor:** Uses expressive, precise types. Avoids `any`, leverages unions/generics/utilities appropriately.
 - [ ] **Appropriate Abstractions:** Right level of abstraction — neither over-engineered nor ad hoc.
@@ -39,9 +36,8 @@ Replace `[ ]` with `[x]` for completed tasks.
 
 ## 4. Debuggability & Robustness (15%)
 
-- [ ] **Invariant Usage:** Proper use of `invariant` for guarding assumptions; clear and contextual error messages.
 - [ ] **Logging & Diagnostics:** Logging is structured, actionable, and minimal — helps trace complex flows.
-- [ ] **Error Handling:** Edge cases handled gracefully; no unhandled rejections or swallowed errors.
+- [ ] **Error Handling:** Edge cases handled gracefully; no unhandled rejections or swallowed errors. `Result` monad used to simplify error handling. `invariant` used for sanity checks.
 
 ### Notes
 
@@ -50,7 +46,7 @@ Replace `[ ]` with `[x]` for completed tasks.
 ## 5. Code Hygiene & Process Discipline (15%)
 
 - [ ] **Linting & Formatting:** Passes all ESLint rules and formatting checks.
-- [ ] **Build & Test Status:** Code compiles and all Vitest suites pass; new code is covered by tests.
+- [ ] **Build & Test Status:** Code compiles and all Vitest suites pass; new mission-critical code is covered by tests.
 - [ ] **Commit Quality:** Commits are atomic, descriptive, and reference related issues or discussions.
 
 ### Notes
