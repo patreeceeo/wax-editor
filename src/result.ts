@@ -81,6 +81,23 @@ export abstract class Result<T, E> {
   }): R;
 
   /**
+   * Maps the success value of an Ok result using the provided function.
+   * If the result is Fail, the error value is passed through unchanged.
+   *
+   * @param fn - Function to transform the success value
+   * @returns Result<U, E> - Ok<U> with transformed value if original was Ok<T>, otherwise Fail<E>
+   *
+   * @example
+   * ```typescript
+   * const result: Result<number, string> = ok(42);
+   * const doubled = result.map(x => x * 2); // Result<number, string> with value 84
+   * const failed: Result<number, string> = fail("error");
+   * const unchanged = failed.map(x => x * 2); // Still Result<number, string> with error "error"
+   * ```
+   */
+  abstract map<U>(fn: (value: T) => U): Result<U, E>;
+
+  /**
    * Given a type guard function for type T, narrows the Result to Ok<T> if the guard passes.
    * If the Result is a Fail, it remains Fail<E>.
    *
@@ -124,6 +141,9 @@ class Ok<T> extends Result<T, any> {
   match<R>(handlers: { ok: (value: T) => R; fail: (error: any) => R }): R {
     return handlers.ok(this.value);
   }
+  map<U>(fn: (value: T) => U): Result<U, any> {
+    return new Ok<U>(fn(this.value));
+  }
   guardType<U extends T>(typeGuard: (value: T) => value is U): Result<U, any> {
     if (typeGuard(this.value)) {
       return new Ok<U>(this.value);
@@ -159,6 +179,9 @@ class Fail<E> extends Result<any, E> {
   }
   match<R>(handlers: { ok: (value: any) => R; fail: (error: E) => R }): R {
     return handlers.fail(this.error);
+  }
+  map<U>(_: (value: any) => U): Result<U, E> {
+    return new Fail(this.error) as Result<U, E>;
   }
   guardType<U>(_: (value: any) => value is U): Result<U, E> {
     return new Fail<E>(this.error);

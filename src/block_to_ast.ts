@@ -6,41 +6,54 @@ import {
   ExpressionStatementNode,
   AstNode,
 } from "./abstract_syntax_tree";
+import type { CompiledInstructionArg } from "./compiled_procedure";
 import { ok, fail, type Result } from "./result";
 
-export type BlockType = "literal" | "variable" | "assignment";
-
 export type BlockValidationError =
-  | { type: "empty_variable_name"; blockId: string }
-  | { type: "empty_assignment_name"; blockId: string }
-  | { type: "unknown_block_type"; blockType: string };
+  | {
+      type: "empty_name";
+      blockId: string;
+      blockType: "variable" | "assignment";
+    }
+  | { type: "unknown_type"; blockType: string };
 
-export interface BaseBlock {
+export interface BaseBlock<T = unknown> {
   id: string;
+  type: string;
+  data: T;
 }
 
-export interface LiteralBlock extends BaseBlock {
+export interface LiteralBlock extends BaseBlock<{
+  value: CompiledInstructionArg;
+}> {
   type: "literal";
-  data: {
-    value: unknown;
-  };
 }
 
-export interface VariableBlock extends BaseBlock {
+export interface VariableBlock extends BaseBlock<{ name: string }> {
   type: "variable";
-  data: {
-    name: string;
-  };
 }
 
-export interface AssignmentBlock extends BaseBlock {
+export interface AssignmentBlock extends BaseBlock<{ variableName: string }> {
   type: "assignment";
-  data: {
-    variableName: string;
-  };
 }
 
 export type Block = LiteralBlock | VariableBlock | AssignmentBlock;
+
+// Helper function for validation
+const validateNonEmptyName = (
+  name: string,
+  blockId: string,
+  blockType: "variable" | "assignment",
+): Result<void, BlockValidationError> => {
+  return name.trim() === ""
+    ? fail({ type: "empty_name", blockId, blockType })
+    : ok(undefined);
+};
+
+// Helper to determine if AST node is an expression
+const isExpression = (astNode: AstNode): boolean => {
+  return astNode instanceof JsLiteralNode || astNode instanceof GetVariableNode;
+};
 
 export function generateASTFromBlock(
   block: Block,
@@ -50,35 +63,27 @@ export function generateASTFromBlock(
       return ok(new JsLiteralNode({ value: block.data.value }));
 
     case "variable":
-      if (block.data.name.trim() === "") {
-        return fail({
-          type: "empty_variable_name",
-          blockId: block.id,
-        });
-      }
-      return ok(new GetVariableNode({ name: block.data.name }));
+      return validateNonEmptyName(block.data.name, block.id, "variable").map(
+        () => new GetVariableNode({ name: block.data.name }),
+      );
 
     case "assignment":
-      if (block.data.variableName.trim() === "") {
-        return fail({
-          type: "empty_assignment_name",
-          blockId: block.id,
-        });
-      }
-
-      // For Phase 1 MVP, assignments will just assign a literal value of 0
-      // In Phase 2, we'll support proper expression nesting
-      const valueExpression = new JsLiteralNode({ value: 0 });
-      return ok(
-        new AssignmentStatementNode({
+      return validateNonEmptyName(
+        block.data.variableName,
+        block.id,
+        "assignment",
+      ).map(() => {
+        // Phase 1 MVP: assign literal value of 0
+        const valueExpression = new JsLiteralNode({ value: 0 });
+        return new AssignmentStatementNode({
           variableName: block.data.variableName,
           valueExpression,
-        }),
-      );
+        });
+      });
 
     default:
       return fail({
-        type: "unknown_block_type",
+        type: "unknown_type",
         blockType: (block as any).type,
       });
   }
@@ -95,12 +100,11 @@ export function generateASTFromBlocks(
 
     astResult.match({
       ok: (astNode) => {
-        // Wrap expressions in ExpressionStatementNode for the program body
-        // Use block type instead of instanceof to determine what kind of AST node we have
-        if (block.type === "literal" || block.type === "variable") {
+        // More explicit type handling without casting
+        if (isExpression(astNode)) {
           statements.push(new ExpressionStatementNode({ value: astNode }));
         } else {
-          // Assignment statements are already statement nodes
+          // We know this must be an AssignmentStatementNode based on our block types
           statements.push(astNode as AssignmentStatementNode);
         }
       },
@@ -110,9 +114,7 @@ export function generateASTFromBlocks(
     });
   }
 
-  if (errors.length > 0) {
-    return fail(errors);
-  }
-
-  return ok(new ProgramNode({ body: statements }));
+  return errors.length > 0
+    ? fail(errors)
+    : ok(new ProgramNode({ body: statements }));
 }
