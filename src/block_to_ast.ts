@@ -50,9 +50,9 @@ const validateNonEmptyName = (
     : ok(undefined);
 };
 
-// Helper to determine if AST node is an expression
-const isExpression = (astNode: AstNode): boolean => {
-  return astNode instanceof JsLiteralNode || astNode instanceof GetVariableNode;
+// Helper to determine if block type produces an expression
+const isExpressionBlock = (blockType: string): boolean => {
+  return blockType === "literal" || blockType === "variable";
 };
 
 export function generateASTFromBlock(
@@ -100,11 +100,11 @@ export function generateASTFromBlocks(
 
     astResult.match({
       ok: (astNode) => {
-        // More explicit type handling without casting
-        if (isExpression(astNode)) {
+        // Use block type to determine what kind of AST node we have
+        if (isExpressionBlock(block.type)) {
           statements.push(new ExpressionStatementNode({ value: astNode }));
         } else {
-          // We know this must be an AssignmentStatementNode based on our block types
+          // Assignment blocks produce AssignmentStatementNode directly
           statements.push(astNode as AssignmentStatementNode);
         }
       },
