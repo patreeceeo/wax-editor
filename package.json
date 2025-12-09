@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "prepare": "husky",
-    "tscwatch": "tsc --noEmit --watch --project tsconfig.app.json"
+    "tscwatch": "tsc --noEmit --watch --project tsconfig.app.json",
+    "tsc": "tsc --noEmit --project tsconfig.app.json"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
