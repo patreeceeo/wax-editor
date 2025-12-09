@@ -7,8 +7,8 @@ import type {
   AssignmentBlock,
 } from "./block_to_ast";
 
-describe("Block System - Phase 1 MVP", () => {
-  describe("Basic Block Types", () => {
+describe("Block to AST conversion", () => {
+  describe("with Basic Block Types", () => {
     it("should create a literal block that generates JsLiteralNode", () => {
       const literalBlock: LiteralBlock = {
         id: "literal-1",
@@ -55,7 +55,7 @@ describe("Block System - Phase 1 MVP", () => {
     });
   });
 
-  describe("AST Generation from Multiple Blocks", () => {
+  describe("with Multiple Blocks", () => {
     it("should generate a ProgramNode from an array of blocks", () => {
       const blocks: Block[] = [
         {
