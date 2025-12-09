@@ -456,9 +456,12 @@ Do not install individual component packages!
 
 - **Scratch**: Block visual programming language (target audience: education)
 - **Blockly**: Google's visual programming library
+- **Brilliant.org**: Specifically its interfaces for interactive math and CS exercises
+- **Smalltalk**: The language that started the OOP revolution
+- https://worrydream.com/LearnableProgramming/
+- https://www.ooux.com/
 - **Node-RED**: Flow-based programming for IoT
 - **Unreal Engine Blueprints**: Visual scripting for game development
-- **Shadcn/UI Documentation**: https://ui.shadcn.com/
 
 ## Appendix: Example Block Representation
 
