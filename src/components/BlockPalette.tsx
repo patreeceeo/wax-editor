@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn } from "../utils";
 
 /** A block item that can be displayed in the palette */
 interface BlockItem {
