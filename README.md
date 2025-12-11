@@ -18,10 +18,10 @@ The goal is to rethink software development from first principles. It's the late
 Other sources of inspo, aside from Smalltalk and Scratch:
 
 - The Brilliant.org App's math and coding interfaces
-- Prior art in the (Blockly)[https://github.com/google/blockly] community
+- Prior art in the [Blockly](https://github.com/google/blockly} community
 - Bret Victor's [articles on dynamic mediums](https://worrydream.com/)
 - The [deep connecton of Objects with UX](https://www.ooux.com/)
-- <luna-park.app>, doing a similar thing but with node-based visual programming
+- [Luna Park](luna-park.app) doing a similar thing but with node-based visual programming
 
 ## Development
 
