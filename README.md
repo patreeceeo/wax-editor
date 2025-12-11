@@ -1,8 +1,12 @@
 # Wax Editor
 
+## Overview
+
 Wax Editor is, at the moment, an AST compiler and virtual machine with debugging support built with React, TypeScript, and Vite. It implements a stack-based virtual machine with time-travel debugging capabilities, allowing developers to step through instruction execution and inspect machine state at each point.
 
-The goal is to build a low-code, visual scripting environment like Scratch, if Scratch were made for serious software development. The underlying semantics of the language will be message passing object-orientation, a la Smalltalk, though the average user will not need to have any clue what that even is. This editor will be powerful because:
+## Vision and Goals
+
+The goal is to rethink software development from first principles. It's the late 2020's, yet we're still building software with tools based in technologies and paradigms of the 1970's. My vision is a block-based visual scripting environment similar Scratch, but for serious software development. The underlying semantics of the language will be message passing object-orientation, a la Smalltalk, though the average user will not need to have any clue what that even is. This editor will be powerful because:
 
 - Users will have powerful debugging features built in to the editor.
 - The editor will evaluate code as it's updated, removing the need for static type checks and allowing for lighting fast feedback.
@@ -10,6 +14,14 @@ The goal is to build a low-code, visual scripting environment like Scratch, if S
 - There will be a dev preview of the relevant parts of the app alongside of / mixed in with the code editor.
 - It will leverage the human brain's visual as well as verbal processing abilities.
 - It seeks to compliment JavaScript, not replace it.
+
+Other sources of inspo, aside from Smalltalk and Scratch:
+
+- The Brilliant.org App's math and coding interfaces
+- Prior art in the (Blockly)[https://github.com/google/blockly] community
+- Bret Victor's [articles on dynamic mediums](https://worrydream.com/)
+- The [deep connecton of Objects with UX](https://www.ooux.com/)
+- <luna-park.app>, doing a similar thing but with node-based visual programming
 
 ## Development
 
