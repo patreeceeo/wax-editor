@@ -2,27 +2,79 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation Organization
+
+**IMPORTANT**: Each piece of information should have a single home document. When another document needs to reference that information, use hyperlinks instead of duplicating content.
+
+- **[README.md](README.md)** - User-facing documentation: project overview, vision, getting started, basic commands, tech stack, features
+- **CLAUDE.md (this file)** - AI assistant guidance: architecture, patterns, conventions, issue tracking, development workflows
+- **[PRD-BlockEditor.md](PRD-BlockEditor.md)** - Product requirements for the block editor feature
+- **[pull_request_template.md](pull_request_template.md)** - PR evaluation rubric and contribution standards
+- **[.beads/README.md](.beads/README.md)** - Introduction to Beads issue tracking system
+
 ## Project Overview
 
-See first section of README.md to understand the project itself, and `pull_request_template.md` to understand how to contribute.
+See [README.md](README.md) for project overview, vision, and basic getting started information.
+
+For contributing standards, see [pull_request_template.md](pull_request_template.md).
+
+## Issue Tracking with Beads
+
+This project uses [Beads](https://github.com/steveyegge/beads) for AI-native issue tracking. Issues live in the repository at `.beads/issues.jsonl` and sync with git commits.
+
+### Essential Beads Commands
+
+```bash
+# Create issues
+bd create --title="Feature description" --type=task|bug|feature
+
+# View and manage issues
+bd list                              # List all issues
+bd list --status=open               # Filter by status
+bd show <issue-id>                   # View issue details
+bd ready                             # Show issues ready to work (no blockers)
+
+# Update issues
+bd update <issue-id> --status=in_progress
+bd update <issue-id> --assignee=username
+bd close <issue-id>                  # Mark complete
+bd close <id1> <id2> ...            # Close multiple at once
+
+# Dependencies
+bd dep add <issue> <depends-on>     # Add dependency
+bd blocked                           # Show blocked issues
+
+# Sync with remote
+bd sync                              # Sync beads changes with git remote
+bd sync --status                     # Check sync status
+
+# Help
+bd quickstart                        # Interactive guide
+bd --list                            # All available commands
+bd <command> --help                  # Command-specific help
+```
+
+### Beads Workflow
+
+**When starting work:** Always create a Beads issue first, then mark it in_progress:
+
+```bash
+bd create --title="Task description" --type=task
+bd update <issue-id> --status=in_progress
+```
+
+**When completing work:** Close the issue and sync:
+
+```bash
+bd close <issue-id>
+bd sync
+```
+
+See [.beads/README.md](.beads/README.md) for more information about Beads.
 
 ## Development Commands
 
-```bash
-# Issue tracking
-Whenever starting on a new request, create an issue for it in `bd` and add any dependencies, if any. Run `bd quickstart` for an overview of how to use the `bd` command, or `bd --list` for a list of all available commands. Run `bd <command> --help` for info about a specific command.
-
-# Development
-npm run dev          # Start Vite development server with hot reload
-npm run build        # TypeScript compilation + Vite production build
-npm run preview      # Preview production build locally
-
-# Code Quality
-npm run lint         # ESLint checks
-npm run test         # Run Vitest test suite
-npm test -- --run    # Run tests once without watch mode
-npm test path/to/test.test.ts  # Run single test file
-```
+See [README.md](README.md) for basic development commands (npm run dev, build, test, lint, etc.).
 
 ## Architecture Overview
 
